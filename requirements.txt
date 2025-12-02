@@ -1,0 +1,8 @@
+Flask
+Flask-Login
+Flask-SQLAlchemy
+gunicorn
+google-generativeai
+Pillow
+Werkzeug
+fpdf
