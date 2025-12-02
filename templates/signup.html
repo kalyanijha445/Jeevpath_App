@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - JEEVPATH AI</title>
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Exact Variables from Login Page */
+            --primary: #10B981;
+            --primary-soft: #ECFDF5;
+            --primary-dark: #059669;
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #9CA3AF;
+            --white: #ffffff;
+            --error: #EF4444;
+            
+            /* Sizing matched to Login */
+            --radius-btn: 40px; 
+            --radius-input: 14px;
+            --shadow-float: 0 8px 25px rgba(16, 185, 129, 0.18);
+            --shadow-card: 0 15px 40px rgba(0,0,0,0.12);
+            --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            position: relative;
+        }
+
+        /* --- BACKGROUND ANIMATION LAYER --- */
+        .bg-animation-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; overflow: hidden; pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .bg-icon {
+            position: absolute;
+            color: rgba(16, 185, 129, 0.15);
+            animation: floatUp linear infinite;
+            bottom: -50px;
+        }
+
+        .i1 { left: 10%; font-size: 1.5rem; animation-duration: 8s; animation-delay: 0s; }
+        .i2 { left: 20%; font-size: 1.2rem; animation-duration: 12s; animation-delay: 2s; }
+        .i3 { left: 35%; font-size: 2rem; animation-duration: 10s; animation-delay: 4s; }
+        .i4 { left: 50%; font-size: 1.8rem; animation-duration: 14s; animation-delay: 1s; }
+        .i5 { left: 65%; font-size: 1.4rem; animation-duration: 11s; animation-delay: 3s; }
+        .i6 { left: 80%; font-size: 2.2rem; animation-duration: 9s; animation-delay: 5s; }
+        .i7 { left: 90%; font-size: 1rem; animation-duration: 13s; animation-delay: 0.5s; }
+        .i8 { left: 5%; font-size: 1.3rem; animation-duration: 15s; animation-delay: 6s; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- CONTENT LAYER --- */
+        .content-layer {
+            position: relative; z-index: 10;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .brand-area {
+            text-align: center; margin-bottom: 10px; flex-shrink: 0;
+            animation: fadeDown 0.8s ease-out;
+        }
+        .logo-circle {
+            width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.9);
+            -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.25);
+            /* Removed font-size/color prop since we use IMG now */
+            border: 2px solid white;
+        }
+        
+        /* NEW: Added Image Styling to match Login Page */
+        .logo-img { width: 40px; height: 40px; object-fit: contain; }
+
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 800; color: var(--primary-dark);
+            letter-spacing: 0.5px; margin: 0; text-transform: uppercase;
+        }
+
+        .scroll-mask {
+            width: 100%; max-width: 360px;
+            position: relative; max-height: 80vh;
+            display: flex; flex-direction: column;
+        }
+        
+        /* SCROLLBAR COMPATIBILITY FIX */
+        .form-container {
+            width: 100%; overflow-y: auto; overflow-x: visible;
+            padding: 5px 15px 40px; 
+            display: flex; flex-direction: column; gap: 15px; 
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .form-container::-webkit-scrollbar { display: none; }
+
+
+        .role-switch-container {
+            display: flex; justify-content: center; gap: 12px;
+            margin-bottom: 5px; flex-shrink: 0;
+            animation: fadeUp 0.6s ease-out 0.1s backwards;
+        }
+        .role-option {
+            flex: 1; position: relative;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 18px; padding: 12px 10px;
+            text-align: center; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.6);
+            transition: all 0.4s var(--transition-bounce);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.04);
+            opacity: 0.7; overflow: hidden;
+        }
+        .role-option::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0));
+            opacity: 0; transition: 0.3s;
+        }
+        .role-option:hover { transform: translateY(-2px); opacity: 0.9; }
+        .role-option.active {
+            opacity: 1; border-color: transparent; background: white; 
+            box-shadow: var(--shadow-float); 
+            transform: scale(1.04) translateY(-3px); z-index: 5;
+        }
+        .role-option.active::after {
+            content:''; position: absolute; bottom: 0; left: 30%; width: 40%;
+            height: 3px; background: var(--primary); border-radius: 10px 10px 0 0;
+        }
+        .role-icon { font-size: 1.4rem; margin-bottom: 5px; color: #cbd5e1; transition: 0.4s; }
+        .role-option.active .role-icon { color: var(--primary); transform: scale(1.1); }
+        .role-label { font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+        .role-option.active .role-label { color: var(--text-dark); }
+
+        .visually-hidden { position: absolute; width: 0; height: 0; opacity: 0; }
+        .hidden-section { display: none; }
+
+        .input-group { position: relative; width: 100%; animation: fadeUp 0.6s ease-out 0.2s backwards; }
+        .input-icon {
+            position: absolute; left: 16px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary); font-size: 0.95rem; z-index: 2; pointer-events: none;
+        }
+
+        .nice-input {
+            width: 100%; padding: 14px 14px 14px 45px;
+            border-radius: var(--radius-input); border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark); font-family: inherit; font-size: 0.9rem; font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: 0.3s ease;
+            -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+        }
+        .nice-input::placeholder { color: #d1d5db; }
+        .nice-input:focus {
+            background: white; border-color: var(--primary);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.15); transform: translateY(-2px);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; position: relative; z-index: 20;}
+
+        /* USER SELECT COMPATIBILITY FIX */
+        .custom-select-wrapper { 
+            position: relative; 
+            width: 100%; 
+            z-index: 2; 
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none; 
+        }
+
+        .c-select-trigger {
+            width: 100%; padding: 14px 35px 14px 45px; 
+            border-radius: var(--radius-input);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            font-size: 0.9rem; color: #d1d5db; font-weight: 500;
+            cursor: pointer; position: relative; transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .c-select-trigger:hover { background: white; transform: translateY(-2px); }
+        .c-select-trigger.filled {
+            background: var(--primary-soft); color: var(--text-dark); border-color: rgba(16, 185, 129, 0.3); font-weight: 600;
+        }
+
+        .c-trigger-arrow {
+            position: absolute; right: 16px;
+            color: #d1d5db; font-size: 0.8rem; transition: transform 0.3s;
+        }
+        .custom-select-wrapper.open .c-trigger-arrow { transform: rotate(180deg); color: var(--primary); }
+        .custom-select-wrapper.open .c-select-trigger { border-color: var(--primary); background: white; }
+
+        .c-options-list {
+            position: absolute; top: calc(100% + 8px); left: 0; width: 100%;
+            background: white; border-radius: 16px; padding: 6px;
+            box-shadow: var(--shadow-card);
+            opacity: 0; visibility: hidden; transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 100; pointer-events: none;
+        }
+        .custom-select-wrapper.open .c-options-list {
+            opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto;
+        }
+
+        .c-option {
+            padding: 10px 14px; 
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; border-radius: 10px; color: var(--text-dark); font-weight: 500; font-size: 0.9rem;
+            transition: 0.2s; border-bottom: 1px solid #f9fafb;
+        }
+        .c-option:last-child { border-bottom: none; }
+        .c-option:hover { background: #F3F4F6; }
+        .c-option.selected { background: var(--primary-soft); color: var(--primary-dark); }
+        
+        .c-radio-circle {
+            width: 18px; height: 18px; border-radius: 50%; border: 2px solid #D1D5DB;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .c-radio-circle::after {
+            content:''; width: 8px; height: 8px; border-radius: 50%;
+            background: var(--primary); transform: scale(0); transition: 0.2s;
+        }
+        .c-option.selected .c-radio-circle { border-color: var(--primary); }
+        .c-option.selected .c-radio-circle::after { transform: scale(1); }
+
+        .btn-main {
+            width: 100%; padding: 14px;
+            border-radius: var(--radius-btn);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; border: none; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+            cursor: pointer; margin-top: 8px;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            animation: fadeUp 0.6s ease-out 0.3s backwards;
+        }
+        .btn-main:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4); }
+        .btn-main:active { transform: scale(0.96); }
+
+        .signup-area {
+            text-align: center; margin-top: 10px; 
+            font-size: 0.8rem; color: var(--text-gray);
+            animation: fadeUp 0.6s ease-out 0.4s backwards;
+        }
+        .text-link { color: var(--primary-dark); font-weight: 700; text-decoration: none; position: relative; margin-left: 5px; }
+        .text-link::after {
+            content:''; position: absolute; width: 0; height: 2px;
+            bottom: -1px; left: 0; background: var(--primary); transition: 0.3s;
+        }
+        .text-link:hover::after { width: 100%; }
+
+        .flash-wrap { margin-bottom: 8px; width: 100%; text-align: center; animation: fadeUp 0.5s ease; }
+        .flash-pill { background: #FEF2F2; color: #EF4444; border: 1px solid #FEE2E2; padding: 8px 16px; border-radius: 30px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.1); }
+        
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body onload="initForm()">
+
+    <!-- Animation Layer -->
+    <div class="bg-animation-layer">
+        <i class="fa-solid fa-heart-pulse bg-icon i1"></i>
+        <i class="fa-solid fa-stethoscope bg-icon i2"></i>
+        <i class="fa-solid fa-dna bg-icon i3"></i>
+        <i class="fa-solid fa-pills bg-icon i4"></i>
+        <i class="fa-solid fa-user-doctor bg-icon i5"></i>
+        <i class="fa-solid fa-hospital bg-icon i6"></i>
+        <i class="fa-solid fa-notes-medical bg-icon i7"></i>
+        <i class="fa-solid fa-syringe bg-icon i8"></i>
+    </div>
+
+    <div class="content-layer">
+        
+        <div class="brand-area">
+            <div class="logo-circle">
+                <!-- CHANGED FROM ICON TO LOGO IMAGE -->
+                <img src="static/logo.png" alt="Logo" class="logo-img">
+            </div>
+            <h1 class="brand-title">JEEVPATH AI</h1>
+        </div>
+
+        <div class="scroll-mask">
+            <form method="POST" action="/signup" class="form-container" onclick="closeAllSelects(event)">
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-wrap">
+                            <div class="flash-pill">
+                                <i class="fa-solid fa-circle-exclamation"></i> {{ messages[0] }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- ACCESSIBILITY FIX -->
+                <input type="text" name="role" id="roleInput" value="patient" class="visually-hidden" aria-label="Selected User Role">
+
+                <div class="role-switch-container">
+                    <div class="role-option active" id="btn-patient" onclick="setRole('patient')">
+                        <div class="role-icon"><i class="fa-solid fa-hospital-user"></i></div>
+                        <div class="role-label">Patient</div>
+                    </div>
+                    <div class="role-option" id="btn-doctor" onclick="setRole('doctor')">
+                        <div class="role-icon"><i class="fa-solid fa-user-doctor"></i></div>
+                        <div class="role-label">Doctor</div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-regular fa-user input-icon"></i>
+                    <input type="text" name="name" class="nice-input" placeholder="Full Name" required autocomplete="name">
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa-regular fa-envelope input-icon"></i>
+                    <input type="email" name="email" class="nice-input" placeholder="Email Address" required autocomplete="email">
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" name="password" class="nice-input" placeholder="Create Password" required autocomplete="new-password">
+                </div>
+
+                <div id="patient-fields">
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <i class="fa-solid fa-cake-candles input-icon"></i>
+                            <input type="number" name="age" id="ageInput" class="nice-input" placeholder="Age" min="1" max="120">
+                        </div>
+                        
+                        <div class="custom-select-wrapper" id="gender-wrapper">
+                            <i class="fa-solid fa-venus-mars input-icon"></i>
+                            <input type="hidden" name="gender" id="real-gender-input" aria-label="Selected Gender">
+                            
+                            <div class="c-select-trigger" onclick="toggleSelect('gender-wrapper', event)">
+                                <span id="gender-display">Gender</span>
+                                <i class="fa-solid fa-chevron-down c-trigger-arrow"></i>
+                            </div>
+                            <div class="c-options-list">
+                                <div class="c-option" onclick="selectOption('gender', 'Male', 'Male')">
+                                    <span>Male</span><div class="c-radio-circle"></div>
+                                </div>
+                                <div class="c-option" onclick="selectOption('gender', 'Female', 'Female')">
+                                    <span>Female</span><div class="c-radio-circle"></div>
+                                </div>
+                                <div class="c-option" onclick="selectOption('gender', 'Other', 'Other')">
+                                    <span>Other</span><div class="c-radio-circle"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="custom-select-wrapper" id="diet-wrapper" style="margin-top: 15px;">
+                        <i class="fa-solid fa-utensils input-icon"></i>
+                        <input type="hidden" name="diet" id="real-diet-input" aria-label="Selected Diet">
+                        
+                        <div class="c-select-trigger" onclick="toggleSelect('diet-wrapper', event)">
+                            <span id="diet-display">Select Diet Preference</span>
+                            <i class="fa-solid fa-chevron-down c-trigger-arrow"></i>
+                        </div>
+                        <div class="c-options-list">
+                            <div class="c-option" onclick="selectOption('diet', 'Vegetarian', 'Veg')">
+                                <span>Vegetarian</span><div class="c-radio-circle"></div>
+                            </div>
+                            <div class="c-option" onclick="selectOption('diet', 'Non-Vegetarian', 'Non-Veg')">
+                                <span>Non-Vegetarian</span><div class="c-radio-circle"></div>
+                            </div>
+                            <div class="c-option" onclick="selectOption('diet', 'Vegan', 'Vegan')">
+                                <span>Vegan</span><div class="c-radio-circle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="doctor-fields" class="hidden-section">
+                    <div class="input-group" style="margin-bottom: 15px;">
+                        <i class="fa-solid fa-stethoscope input-icon"></i>
+                        <input type="text" name="department" id="deptInput" class="nice-input" placeholder="Specialization (e.g. Cardio)">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-briefcase-medical input-icon"></i>
+                        <input type="number" name="experience" id="expInput" class="nice-input" placeholder="Experience (Years)">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-main">
+                    Create Account <i class="fa-solid fa-arrow-right-long"></i>
+                </button>
+
+                <div class="signup-area">
+                    Already a member? <a href="/login" class="text-link">Login Here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function initForm() { setRole('patient'); }
+        function setRole(role) {
+            document.getElementById('roleInput').value = role;
+            const btnPat = document.getElementById('btn-patient');
+            const btnDoc = document.getElementById('btn-doctor');
+            const fPat = document.getElementById('patient-fields');
+            const fDoc = document.getElementById('doctor-fields');
+            const ageInp = document.getElementById('ageInput');
+
+            if (role === 'patient') {
+                btnPat.classList.add('active'); btnDoc.classList.remove('active');
+                fPat.style.display = 'block'; fPat.style.animation = 'fadeUp 0.5s forwards';
+                fDoc.style.display = 'none';
+                if(ageInp) ageInp.required = true;
+            } else {
+                btnPat.classList.remove('active'); btnDoc.classList.add('active');
+                fPat.style.display = 'none';
+                fDoc.style.display = 'block'; fDoc.style.animation = 'fadeUp 0.5s forwards';
+                if(ageInp) ageInp.required = false;
+            }
+        }
+
+        function toggleSelect(id, e) {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-select-wrapper').forEach(el => {
+                if (el.id !== id) el.classList.remove('open');
+            });
+            const wrapper = document.getElementById(id);
+            wrapper.classList.toggle('open');
+        }
+
+        function selectOption(type, displayValue, formValue) {
+            const displayEl = document.getElementById(type + '-display');
+            displayEl.innerText = displayValue; 
+            
+            const wrapper = document.getElementById(type + '-wrapper');
+            const trigger = wrapper.querySelector('.c-select-trigger');
+            
+            trigger.classList.add('filled');
+            document.getElementById('real-' + type + '-input').value = formValue;
+
+            const options = wrapper.querySelectorAll('.c-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+
+            setTimeout(() => { wrapper.classList.remove('open'); }, 200);
+        }
+
+        function closeAllSelects(e) {
+            if (!e.target.closest('.custom-select-wrapper')) {
+                document.querySelectorAll('.custom-select-wrapper').forEach(el => el.classList.remove('open'));
+            }
+        }
+    </script>
+</body>
+</html>

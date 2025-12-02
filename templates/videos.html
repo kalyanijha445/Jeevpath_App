@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeevPath AI - Videos</title>
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* --- GLOBAL & DASHBOARD STYLES --- */
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --accent: #D1FAE5;
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.04);
+            --radius-box: 24px;
+            --radius-btn: 50px;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        html {
+            height: 100%;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            /* Header Space + Content + Bottom Nav Space */
+            padding: 110px 0 110px; 
+            color: var(--text-dark);
+            transition: 0.3s filter;
+            min-height: 100%; /* Ensures page fills screen to allow scroll */
+            overflow-x: hidden;
+        }
+
+        body.menu-open { overflow: hidden; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- MENU & DROPDOWN STYLES --- */
+        select.hidden-real-select { display: none !important; }
+
+        .custom-dd-container { position: relative; width: 100%; border-radius: 16px; background: white; transition: 0.3s; }
+        .custom-dd-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px 16px; font-size: 0.95rem; font-weight: 600; color: var(--text-dark); background: transparent; border: 1px solid transparent; border-radius: 16px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); font-family: 'Poppins', sans-serif; }
+        .custom-dd-trigger:active, .custom-dd-container.open .custom-dd-trigger { background-color: #f0fdf4; border-color: var(--primary); }
+        .c-dd-label { font-size: 0.75rem; color: var(--text-gray); display: block; margin-bottom: 2px; }
+        .c-dd-val { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .c-arrow { color: var(--primary); transition: transform 0.3s; flex-shrink: 0;}
+        .custom-dd-container.open .c-arrow { transform: rotate(180deg); }
+        .custom-dd-options { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 999; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden; border: 1px solid var(--accent); max-height: 250px; overflow-y: auto; }
+        .custom-dd-container.open .custom-dd-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .c-option { padding: 12px 16px; font-size: 0.95rem; font-weight: 500; color: var(--text-dark); border-bottom: 1px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .c-option:last-child { border-bottom: none; }
+        .c-option:hover, .c-option.selected { background-color: var(--accent); color: var(--primary-dark); }
+        .c-check { display: none; color: var(--primary); }
+        .c-option.selected .c-check { display: block; }
+
+        /* --- HEADER & DRAWER STYLES --- */
+        .glass-header { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 500px; background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-radius: var(--radius-btn); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: var(--shadow-soft); border: 1px solid rgba(255, 255, 255, 0.6); }
+        .menu-btn, .user-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: 0.2s; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: var(--primary); font-size: 1.2rem; }
+        
+        /* UPDATED: Simple header title style */
+        .header-title { font-weight: 700; font-size: 1rem; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; }
+        
+        .side-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 2000; }
+        .side-overlay.active { opacity: 1; visibility: visible; }
+        .side-drawer { position: fixed; top: 0; left: 0; height: 100%; width: 80%; max-width: 340px; background: var(--white); z-index: 2001; transform: translateX(-110%); transition: cubic-bezier(0.165, 0.84, 0.44, 1) 0.5s; padding: 30px 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; cursor: default; }
+        .side-overlay.active .side-drawer { transform: translateX(0); }
+        .brand-block { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+        .brand-logo { width: 40px; height: 40px; object-fit: contain; }
+        .brand-name { font-weight: 700; font-size: 1.3rem; color: var(--primary-dark); }
+        .nav-items { display: flex; flex-direction: column; gap: 12px; }
+        .drawer-link { padding: 15px; background: #f3f4f6; border-radius: 15px; font-weight: 500; color: var(--text-dark); display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .drawer-link i { color: var(--primary); font-size: 1.1rem; }
+        .drawer-link:active { background: var(--accent); color: var(--primary-dark); }
+        .drawer-dropdown { background: #f3f4f6; border-radius: 15px; overflow: hidden; transition: 0.3s; }
+        .dd-trigger { width: 100%; padding: 15px; background: transparent; border: none; display: flex; align-items: center; justify-content: space-between; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 500; color: var(--text-dark); cursor: pointer; }
+        .dd-left { display: flex; align-items: center; gap: 12px; }
+        .dd-left i { color: var(--primary); font-size: 1.1rem; }
+        .dd-arrow { font-size: 0.8rem; transition: transform 0.3s; color: var(--text-gray); }
+        .dd-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; background: white; border-top: 1px solid transparent; opacity: 0; }
+        .drawer-dropdown.active .dd-content { max-height: 300px; padding: 15px; border-top: 1px solid #eee; opacity: 1; }
+        .drawer-dropdown.active .dd-arrow { transform: rotate(180deg); color: var(--primary); }
+        .dd-text { font-size: 0.85rem; color: var(--text-gray); line-height: 1.5; }
+        .dd-btn-small { display: inline-block; margin-top: 10px; padding: 8px 16px; background: var(--primary); color: white; border-radius: 20px; font-size: 0.8rem; }
+        .close-drawer-btn { position: absolute; top: 10px; right: -50px; color: white; font-size: 2rem; cursor: pointer; background: transparent; border: none; padding: 10px; }
+        .version-text { text-align: center; color: var(--text-gray); font-size: 0.8rem; padding: 20px 0 10px; }
+
+        /* --- PROFILE MODAL STYLES --- */
+        .profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; visibility: hidden; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.83, 0, 0.17, 1), visibility 0.5s; display: flex; flex-direction: column; overflow-y: auto; }
+        .profile-modal.open { visibility: visible; transform: translateY(0); }
+        .profile-header { padding: 40px 20px 20px; background: linear-gradient(135deg, var(--primary), #34D399); color: white; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); position: relative; }
+        .profile-close-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; }
+        .profile-pic-lg { width: 100px; height: 100px; border-radius: 50%; background: white; color: var(--primary); font-size: 2.5rem; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px; border: 4px solid rgba(255,255,255,0.3); }
+        .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .profile-email { opacity: 0.9; font-size: 0.9rem; margin-top: 5px; }
+        .profile-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px; margin-top: 10px; }
+        .profile-card-item { background: white; border-radius: 20px; padding: 20px 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
+        .p-icon { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .p-label { display: block; font-size: 0.8rem; color: var(--text-gray); margin-bottom: 5px; }
+        .p-val { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+        .modal-footer-logout { margin-top: auto; padding: 30px; }
+        .logout-pill { display: block; width: 100%; text-align: center; padding: 18px; background: #FFE4E6; color: #DC2626; border-radius: var(--radius-btn); font-weight: 700; transition: 0.2s; }
+
+        /* --- BOTTOM NAV STYLES --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: grid; grid-template-columns: repeat(3, 1fr); padding: 12px 10px 20px; border-top-left-radius: 25px; border-top-right-radius: 25px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 100; }
+        .b-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-gray); transition: 0.3s; }
+        .b-nav-item.active { color: var(--primary); }
+        .b-nav-item i { font-size: 1.3rem; margin-bottom: 2px; transition: 0.3s; }
+        .b-nav-item.active i { transform: translateY(-3px); }
+        .b-nav-text { font-size: 0.7rem; font-weight: 500; }
+
+        /* --- VIDEO PAGE SPECIFIC STYLES --- */
+        .container-app { 
+            padding: 10px 20px; max-width: 600px; margin: 0 auto; 
+            position: relative; z-index: 1;
+            /* Ensures scroll functionality */
+            min-height: 80vh; 
+        }
+
+        /* Search Bar */
+        .search-row { display: flex; gap: 10px; margin-bottom: 20px; position: relative; margin-top: 10px; }
+        .search-bar-wrap { flex: 1; position: relative; display: flex; align-items: center; background: white; border-radius: 16px; padding: 5px 5px 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid transparent; transition: 0.3s; }
+        .search-bar-wrap:focus-within { border-color: var(--primary); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15); }
+        .search-icon-glass { color: var(--text-gray); margin-right: 8px; }
+        .search-input { flex: 1; border: none; background: transparent; font-family: 'Poppins', sans-serif; font-size: 0.95rem; color: var(--text-dark); width: 100%; }
+        .search-input::placeholder { color: #9CA3AF; }
+        
+        .mic-btn { background: transparent; border: none; color: var(--primary); font-size: 1.1rem; cursor: pointer; padding: 10px; transition: transform 0.2s; }
+        .mic-btn:active { transform: scale(0.8); }
+        .mic-btn.listening { animation: pulse-red 1.5s infinite; color: #ef4444; }
+
+        .filter-toggle-btn { background: white; border: none; border-radius: 16px; width: 50px; display: flex; align-items: center; justify-content: center; color: var(--text-dark); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.2s; }
+        .filter-toggle-btn:active, .filter-toggle-btn.active { background: var(--primary); color: white; }
+
+        /* Filter Panel */
+        .filter-panel { background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: var(--shadow-soft); display: none; flex-wrap: wrap; gap: 8px; animation: slide-down 0.3s ease-out; }
+        .filter-panel.active { display: flex; }
+        .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; background: #F3F4F6; color: var(--text-gray); border: 1px solid transparent; cursor: pointer; transition: 0.2s; }
+        .filter-chip:active, .filter-chip.selected { background: var(--accent); color: var(--primary-dark); border-color: var(--primary); }
+
+        /* YT Style Video Feed */
+        .video-grid { display: flex; flex-direction: column; gap: 20px; }
+        .yt-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+        .yt-card:active { transform: scale(0.98); }
+        .yt-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        
+        .yt-thumbnail-box { position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; }
+        .yt-thumb-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
+        .play-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); opacity: 0.9; transition: 0.2s; }
+        .yt-card:hover .play-overlay { transform: translate(-50%, -50%) scale(1.1); background: var(--primary); }
+        
+        .native-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        .yt-card.playing .native-video { display: block; }
+        .yt-card.playing .yt-thumb-img, .yt-card.playing .play-overlay { display: none; }
+
+        .yt-info-area { padding: 12px 15px 15px; display: flex; gap: 12px; align-items: flex-start;}
+        .doc-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; object-fit: cover; flex-shrink: 0; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--primary); font-weight:bold; }
+        .yt-text-content { flex: 1; }
+        .yt-title { margin: 0 0 4px; font-size: 0.95rem; font-weight: 600; line-height: 1.3; color: var(--text-dark); display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; line-clamp: 2; }
+        .yt-meta { font-size: 0.8rem; color: var(--text-gray); display: flex; align-items: center; flex-wrap: wrap; }
+        .yt-author { color: var(--text-gray); margin-right: 6px; font-weight: 500;}
+        .yt-check { color: var(--primary); font-size: 0.7rem; margin-left: 2px; }
+        .yt-dot { margin: 0 6px; font-size: 0.5rem; opacity: 0.6; }
+        .yt-desc-prev { font-size: 0.75rem; color: #888; margin-top: 6px; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 1; line-clamp: 1; }
+        
+        .empty-feed-ui { text-align: center; color: var(--text-gray); padding: 40px 20px; font-size: 0.9rem; display: none; }
+
+        @keyframes pulse-red { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes slide-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDE MENU -->
+    <div class="side-overlay" id="sideOverlay" onclick="if(event.target === this) toggleMenu()">
+        <button class="close-drawer-btn" onclick="toggleMenu()" aria-label="Close menu">
+            <i class="fa-solid fa-times" aria-hidden="true"></i>
+        </button>
+        
+        <div class="side-drawer">
+            <div>
+                <div class="brand-block">
+                    <img src="static/logo.png" alt="Logo" class="brand-logo">
+                    <div class="brand-name">JEEVPATH</div>
+                </div>
+
+                <!-- Custom Language Dropdown (FULL LIST) -->
+                <div style="margin-bottom: 25px;">
+                     <!-- Real Hidden Select -->
+                    <select id="appLang" class="hidden-real-select"></select>
+                    <!-- Custom UI -->
+                    <div class="custom-dd-container" id="dd-wrapper-lang">
+                        <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-lang')">
+                            <span class="c-dd-val">English</span>
+                            <i class="fa-solid fa-chevron-down c-arrow"></i>
+                        </div>
+                        <div class="custom-dd-options">
+                            <div class="c-option selected" data-value="en" onclick="selectLang('en', 'English')">English <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="hi" onclick="selectLang('hi', 'हिन्दी (Hindi)')">हिन्दी (Hindi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mr" onclick="selectLang('mr', 'मराठी (Marathi)')">मराठी (Marathi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="gu" onclick="selectLang('gu', 'ગુજરાતી (Gujarati)')">ગુજરાતી (Gujarati) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="bn" onclick="selectLang('bn', 'বাংলা (Bengali)')">বাংলা (Bengali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="pa" onclick="selectLang('pa', 'ਪੰਜਾਬੀ (Punjabi)')">ਪੰਜਾਬੀ (Punjabi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="te" onclick="selectLang('te', 'తెలుగు (Telugu)')">తెలుగు (Telugu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ta" onclick="selectLang('ta', 'தமிழ் (Tamil)')">தமிழ் (Tamil) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ml" onclick="selectLang('ml', 'മലയാളം (Malayalam)')">മലയാളം (Malayalam) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kn" onclick="selectLang('kn', 'ಕನ್ನಡ (Kannada)')">ಕನ್ನಡ (Kannada) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ur" onclick="selectLang('ur', 'اردو (Urdu)')">اردو (Urdu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="or" onclick="selectLang('or', 'ଓଡ଼ିଆ (Odia)')">ଓଡ଼ିଆ (Odia) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="as" onclick="selectLang('as', 'অসমীয়া (Assamese)')">অসমীয়া (Assamese) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mni" onclick="selectLang('mni', 'মৈতৈলোন্ (Manipuri)')">মৈতৈলোন্ (Manipuri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ne" onclick="selectLang('ne', 'नेपाली (Nepali)')">नेपाली (Nepali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sa" onclick="selectLang('sa', 'संस्कृतम् (Sanskrit)')">संस्कृतम् (Sanskrit) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sd" onclick="selectLang('sd', 'सिंधी (Sindhi)')">सिंधी (Sindhi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="doi" onclick="selectLang('doi', 'डोगरी (Dogri)')">डोगरी (Dogri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kok" onclick="selectLang('kok', 'कोंकणी (Konkani)')">कोंकणी (Konkani) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="brx" onclick="selectLang('brx', 'बोड़ो (Bodo)')">बोड़ो (Bodo) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mai" onclick="selectLang('mai', 'मैथिली (Maithili)')">मैथिली (Maithili) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sat" onclick="selectLang('sat', 'ᱥᱟᱱᱛᱟᱲᱤ (Santali)')">ᱥᱟᱱᱛᱟᱲᱤ (Santali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ks" onclick="selectLang('ks', 'کٲشُر (Kashmiri)')">کٲشُر (Kashmiri) <i class="fa-solid fa-check c-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-items">
+                    <a href="/reports" class="drawer-link" data-translate-title="menu_report" data-translate-key="menu_report">
+                        <i class="fa-solid fa-file-medical"></i> <span data-translate-key="menu_report">Report History</span>
+                    </a>
+                    <a href="/blood_bank" class="drawer-link" data-translate-title="menu_blood" data-translate-key="menu_blood">
+                        <i class="fa-solid fa-hand-holding-droplet"></i> <span data-translate-key="menu_blood">Blood Bank</span>
+                    </a>
+                    <a href="/chat" class="drawer-link" data-translate-title="menu_chat" data-translate-key="menu_chat">
+                        <i class="fa-solid fa-comments"></i> <span data-translate-key="menu_chat">Chat With Us</span>
+                    </a>
+
+                    <div class="drawer-dropdown" id="dd-contact">
+                        <button type="button" class="dd-trigger" onclick="toggleAccordion('dd-contact')">
+                            <span class="dd-left"><i class="fa-solid fa-phone"></i> <span data-translate-key="contact_us">Contact Us</span></span>
+                            <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content">
+                            <div class="dd-text">
+                                <span data-translate-key="contact_text">Have questions? Call our helpline or visit our main center.</span>
+                                <br><br>
+                                <strong>+91 1800-123-4567</strong><br>
+                                help@jeevpath.com
+                            </div>
+                            <a href="#" class="dd-btn-small" data-translate-key="call_now">Call Now</a>
+                        </div>
+                    </div>
+
+                    <div class="drawer-dropdown" id="dd-about">
+                        <button type="button" class="dd-trigger" onclick="toggleAccordion('dd-about')">
+                            <span class="dd-left"><i class="fa-solid fa-info-circle"></i> <span data-translate-key="about_app">About App</span></span>
+                            <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content">
+                            <div class="dd-text">
+                                <span data-translate-key="about_text">JeevPath AI uses advanced algorithms to analyze medical reports.</span>
+                                <br><br>
+                                <span data-translate-key="about_sub">Designed for Season Specific Diagnosis in India.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="version-text">v1.0.4 Application</div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="profile-close-btn" onclick="toggleProfile()" aria-label="Close profile">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="profile-pic-lg">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+        </div>
+
+        <div class="profile-data-grid">
+            <div class="profile-card-item">
+                <i class="fa-solid fa-calendar-day p-icon"></i>
+                <span class="p-label" data-translate-key="label_age">Age</span>
+                <span class="p-val">{{ user.age }} <span data-translate-key="years">Years</span></span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-venus-mars p-icon"></i>
+                <span class="p-label" data-translate-key="label_gender">Gender</span>
+                <span class="p-val">{{ user.gender }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-utensils p-icon"></i>
+                <span class="p-label" data-translate-key="label_diet">Diet</span>
+                <span class="p-val">{{ user.diet }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-file-medical-alt p-icon"></i>
+                <span class="p-label" data-translate-key="label_id">ID</span>
+                <span class="p-val">#JP8291</span>
+            </div>
+        </div>
+
+        <div class="modal-footer-logout">
+            <a href="/logout" class="logout-pill">
+                <i class="fa-solid fa-right-from-bracket"></i> <span data-translate-key="btn_logout">Logout Securely</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- HEADER (UPDATED: No Youtube Icon) -->
+    <header class="glass-header">
+        <button class="menu-btn" onclick="toggleMenu()" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+        <div class="header-title">
+            <span data-translate-key="videos_title">VIDEOS</span>
+        </div>
+        <button class="user-btn" onclick="toggleProfile()" aria-label="Open profile">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="container-app">
+        <!-- Hidden Language Input for JS tracking if needed -->
+        <input type="hidden" name="language" id="selected-language-input" value="en">
+
+        <!-- Search & Filter Bar -->
+        <div class="search-row">
+            <div class="search-bar-wrap">
+                <i class="fa-solid fa-magnifying-glass search-icon-glass"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search doctors, tips..." data-translate-placeholder="search_pl" onkeyup="filterVideos()">
+                <button class="mic-btn" id="voiceBtn" onclick="toggleDictation()" aria-label="Voice search"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+            <button class="filter-toggle-btn" onclick="toggleFilters()" aria-label="Toggle filters"><i class="fa-solid fa-sliders"></i></button>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel" id="filterPanel">
+            <div class="filter-chip selected" onclick="applyFilter('all', this)" data-translate-key="filter_all">All</div>
+            <div class="filter-chip" onclick="applyFilter('recent', this)" data-translate-key="filter_recent">Newest</div>
+            <div class="filter-chip" onclick="applyFilter('general', this)" data-translate-key="filter_general">General</div>
+            <div class="filter-chip" onclick="applyFilter('diet', this)" data-translate-key="filter_diet">Diet</div>
+        </div>
+
+        <!-- Video Grid -->
+        <div class="video-grid" id="videoContainer">
+            {% for vid in videos %}
+            <div class="yt-card" onclick="playVideo(this)">
+                <!-- Thumbnail with Play Overlay -->
+                <div class="yt-thumbnail-box">
+                    <img src="{{ url_for('uploaded_file', filename=vid.thumbnail_path) }}" alt="Thumbnail" class="yt-thumb-img">
+                    <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
+                    <!-- Hidden Video (Activates on click) -->
+                    <video class="native-video" controls preload="none">
+                        <source src="{{ url_for('uploaded_file', filename=vid.video_path) }}" type="video/mp4">
+                    </video>
+                </div>
+                
+                <!-- YouTube style Info -->
+                <div class="yt-info-area">
+                    <div class="doc-avatar" style="background:var(--accent);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;">
+                        {{ vid.doctor.name[0] }}
+                    </div>
+                    <div class="yt-text-content">
+                        <h3 class="yt-title">{{ vid.title }}</h3>
+                        <div class="yt-meta">
+                            <span class="yt-author filter-name">Dr. {{ vid.doctor.name }}</span> <i class="fa-solid fa-circle-check yt-check"></i>
+                            <span class="yt-dot"><i class="fa-solid fa-circle"></i></span>
+                            <span>{{ vid.timestamp.strftime('%d %b') }}</span>
+                        </div>
+                        <div class="yt-desc-prev filter-desc">{{ vid.description }}</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-feed-ui" style="display:block;">
+                <i class="fa-solid fa-film" style="font-size: 3rem; color: #E5E7EB; margin-bottom:10px;"></i><br>
+                <span data-translate-key="no_videos">No health videos found.</span>
+            </div>
+            {% endfor %}
+            
+            <div class="empty-feed-ui" id="noResultsMsg">
+                <span data-translate-key="no_match">No matching videos found.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <a href="/user_dashboard" class="b-nav-item"><i class="fa-solid fa-house" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_home">Home</span></a>
+        <a href="#" class="b-nav-item active"><i class="fa-brands fa-youtube" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_videos">Videos</span></a>
+        <a href="/consult" class="b-nav-item"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_consult">Consult</span></a>
+    </div>
+
+    <script>
+        // TRANSLATION DATA - COMPLETE 23 LANGUAGES FOR VIDEOS PAGE
+        const translations = {
+            'en': { videos_title:'Videos', nav_home:'Home', nav_videos:'Videos', nav_consult:'Consult', filter_all:'All', filter_recent:'Newest', filter_general:'General', filter_diet:'Diet', search_pl:'Search doctors, tips...', no_videos:'No health videos found.', no_match:'No matching videos found.', menu_report:'Report History', menu_blood:'Blood Bank', menu_chat:'Chat With Us', contact_us:'Contact Us', contact_text:'Have questions? Call our helpline or visit our main center.', call_now:'Call Now', about_app:'About App', about_text:'JeevPath AI uses advanced algorithms to analyze medical reports.', about_sub:'Designed for Season Specific Diagnosis in India.', label_age:'Age', label_gender:'Gender', label_diet:'Diet', label_id:'ID', btn_logout:'Logout Securely', years:'Years' },
+            'hi': { videos_title:'वीडियो', nav_home:'होम', nav_videos:'वीडियो', nav_consult:'परामर्श', filter_all:'सभी', filter_recent:'नवीनतम', filter_general:'सामान्य', filter_diet:'आहार', search_pl:'डॉक्टर खोजें...', no_videos:'कोई वीडियो नहीं मिला', no_match:'कोई परिणाम नहीं मिला', menu_report:'रिपोर्ट इतिहास', menu_blood:'ब्लड बैंक', menu_chat:'चैट करें', contact_us:'संपर्क करें', contact_text:'प्रश्न हैं? हेल्पलाइन पर कॉल करें।', call_now:'कॉल करें', about_app:'ऐप के बारे में', about_text:'JeevPath AI मेडिकल रिपोर्ट का विश्लेषण करता है।', about_sub:'भारत के लिए।', label_age:'आयु', label_gender:'लिंग', label_diet:'आहार', label_id:'आईडी', btn_logout:'लॉग आउट करें', years:'वर्ष' },
+            'mr': { videos_title:'व्हिडिओ', nav_home:'होम', nav_videos:'व्हिडिओ', nav_consult:'सल्ला', filter_all:'सर्व', filter_recent:'नवीन', filter_general:'सामान्य', filter_diet:'आहार', search_pl:'डॉक्टर शोधा...', no_videos:'व्हिडिओ सापडले नाहीत', no_match:'परिणाम नाही', menu_report:'रिपोर्ट इतिहास', menu_blood:'रक्त पेढी', menu_chat:'गप्पा मारा', contact_us:'संपर्क साधा', contact_text:'प्रश्न आहेत? कॉल करा.', call_now:'कॉल करा', about_app:'ॲप बद्दल', about_text:'JeevPath AI अहवाल तपासते.', about_sub:'भारतासाठी.', label_age:'वय', label_gender:'लिंग', label_diet:'आहार', label_id:'आयडी', btn_logout:'बाहेर पडणे', years:'वर्षे' },
+            'gu': { videos_title:'વિડિઓ', nav_home:'હોમ', nav_videos:'વિડિઓ', nav_consult:'સલાહ', filter_all:'બધા', filter_recent:'નવું', filter_general:'સામાન્ય', filter_diet:'ખોરાક', search_pl:'શોધો...', no_videos:'વિડિઓ મળ્યા નથી', no_match:'કોઈ પરિણામ નથી', menu_report:'રિપોર્ટ ઇતિહાસ', menu_blood:'બ્લડ બેંક', menu_chat:'વાત કરો', contact_us:'સંપર્ક', contact_text:'પ્રશ્નો? કોલ કરો.', call_now:'કોલ', about_app:'વિશે', about_text:'JeevPath AI વિશ્લેષણ કરે છે.', about_sub:'ભારત માટે.', label_age:'ઉંમર', label_gender:'લિંગ', label_diet:'ખોરાક', label_id:'ID', btn_logout:'લોગ આઉટ', years:'વર્ષ' },
+            'bn': { videos_title:'ভিডিও', nav_home:'হোম', nav_videos:'ভিডিও', nav_consult:'পরামর্শ', filter_all:'সব', filter_recent:'নতুন', filter_general:'সাধারণ', filter_diet:'খাদ্য', search_pl:'অনুসন্ধান...', no_videos:'ভিডিও পাওয়া যায়নি', no_match:'ফলাফল নেই', menu_report:'ইতিহাস', menu_blood:'ব্লাড', menu_chat:'চ্যাট', contact_us:'যোগাযোগ', contact_text:'প্রশ্ন? কল করুন।', call_now:'কল', about_app:'সম্পর্কে', about_text:'JeevPath AI বিশ্লেষণ করে।', about_sub:'ভারতের জন্য।', label_age:'বয়স', label_gender:'লিঙ্গ', label_diet:'খাদ্য', label_id:'ID', btn_logout:'লগ আউট', years:'বছর' },
+            'pa': { videos_title:'ਵੀਡੀਓ', nav_home:'ਹੋਮ', nav_videos:'ਵੀਡੀਓ', nav_consult:'ਸਲਾਹ', filter_all:'ਸਭ', filter_recent:'ਨਵਾਂ', filter_general:'ਆਮ', filter_diet:'ਖੁਰਾਕ', search_pl:'ਖੋਜ...', no_videos:'ਵੀਡੀਓ ਨਹੀਂ ਲੱਭੇ', no_match:'ਨਤੀਜਾ ਨਹੀਂ', menu_report:'ਰਿਪੋਰਟ', menu_blood:'ਬਲੱਡ', menu_chat:'ਗੱਲਬਾਤ', contact_us:'ਸੰਪਰਕ', contact_text:'ਸਵਾਲ? ਕਾਲ ਕਰੋ।', call_now:'ਕਾਲ', about_app:'ਬਾਰੇ', about_text:'AI ਵਿਸ਼ਲੇਸ਼ਣ।', about_sub:'ਭਾਰਤ ਲਈ।', label_age:'ਉਮਰ', label_gender:'ਲਿੰਗ', label_diet:'ਖੁਰਾਕ', label_id:'ID', btn_logout:'ਲੌਗ ਆਉਟ', years:'ਸਾਲ' },
+            'te': { videos_title:'వీడియోలు', nav_home:'హోమ్', nav_videos:'వీడియోలు', nav_consult:'సలహా', filter_all:'అన్నీ', filter_recent:'కొత్త', filter_general:'సాధారణ', filter_diet:'ఆహారం', search_pl:'వెతకండి...', no_videos:'వీడియోలు లేవు', no_match:'ఫలితం లేదు', menu_report:'రిపోర్ట్', menu_blood:'బ్లడ్', menu_chat:'మాట్లాడండి', contact_us:'సంప్రదించండి', contact_text:'ప్రశ్నలు? కాల్ చేయండి.', call_now:'కాల్', about_app:'గురించి', about_text:'AI విశ్లేషిస్తుంది.', about_sub:'భారత్ కోసం.', label_age:'వయస్సు', label_gender:'లింగం', label_diet:'ఆహారం', label_id:'ID', btn_logout:'లాగ్ అవుట్', years:'ఏళ్లు' },
+            'ta': { videos_title:'வீடியோ', nav_home:'முகப்பு', nav_videos:'வீடியோ', nav_consult:'ஆலோசனை', filter_all:'எல்லாம்', filter_recent:'புதிய', filter_general:'பொது', filter_diet:'உணவு', search_pl:'தேடு...', no_videos:'வீடியோ இல்லை', no_match:'முடிவு இல்லை', menu_report:'அறிக்கை', menu_blood:'ரத்தம்', menu_chat:'அரட்டை', contact_us:'தொடர்பு', contact_text:'கேள்விகள்? அழைக்கவும்.', call_now:'அழைப்பு', about_app:'பற்றி', about_text:'AI பகுப்பாய்வு.', about_sub:'இந்தியா.', label_age:'வயது', label_gender:'பாலினம்', label_diet:'உணவு', label_id:'ID', btn_logout:'வெளியேறு', years:'ஆண்டுகள்' },
+            'ml': { videos_title:'വീഡിയോ', nav_home:'ഹോം', nav_videos:'വീഡിയോ', nav_consult:'കൺസൾട്ട്', filter_all:'എല്ലാം', filter_recent:'പുതിയ', filter_general:'പൊതു', filter_diet:'ഭക്ഷണം', search_pl:'തിരയൂ...', no_videos:'വീഡിയോ ഇല്ല', no_match:'ഫലമില്ല', menu_report:'റിപ്പോർട്ട്', menu_blood:'രക്തം', menu_chat:'ചാറ്റ്', contact_us:'ബന്ധപ്പെടുക', contact_text:'വിളിക്കുക.', call_now:'വിളിക്കുക', about_app:'കുറിച്ച്', about_text:'AI വിശകലനം.', about_sub:'ഇന്ത്യ.', label_age:'വയസ്സ്', label_gender:'ലിംഗം', label_diet:'ഭക്ഷണം', label_id:'ID', btn_logout:'പുറത്ത്', years:'വയസ്സ്' },
+            'kn': { videos_title:'ವೀಡಿಯೊ', nav_home:'ಮುಖಪುಟ', nav_videos:'ವೀಡಿಯೊ', nav_consult:'ಸಲಹೆ', filter_all:'ಎಲ್ಲಾ', filter_recent:'ಹೊಸ', filter_general:'ಸಾಮಾನ್ಯ', filter_diet:'ಆಹಾರ', search_pl:'ಹುಡುಕಿ...', no_videos:'ವೀಡಿಯೊ ಇಲ್ಲ', no_match:'ಫಲಿತಾಂಶವಿಲ್ಲ', menu_report:'ವರದಿ', menu_blood:'ರಕ್ತ', menu_chat:'ಚಾಟ್', contact_us:'ಸಂಪರ್ಕಿಸಿ', contact_text:'ಕರೆ ಮಾಡಿ.', call_now:'ಕರೆ', about_app:'ಬಗ್ಗೆ', about_text:'AI ವಿಶ್ಲೇಷಣೆ.', about_sub:'ಭಾರತ.', label_age:'ವಯಸ್ಸು', label_gender:'ಲಿಂಗ', label_diet:'ಆಹಾರ', label_id:'ID', btn_logout:'ಹೊರಗೆ', years:'ವರ್ಷ' },
+            'ur': { videos_title:'ویڈیو', nav_home:'ہوم', nav_videos:'ویڈیو', nav_consult:'مشورہ', filter_all:'سب', filter_recent:'نیا', filter_general:'عام', filter_diet:'غذا', search_pl:'تلاش کریں...', no_videos:'ویڈیو نہیں', no_match:'کوئی نتیجہ نہیں', menu_report:'رپورٹ', menu_blood:'بلڈ', menu_chat:'چیٹ', contact_us:'رابطہ', contact_text:'کال کریں۔', call_now:'کال', about_app:'بارے میں', about_text:'AI تجزیہ۔', about_sub:'بھارت۔', label_age:'عمر', label_gender:'جنس', label_diet:'غذا', label_id:'ID', btn_logout:'لاگ آؤٹ', years:'سال' },
+            'or': { videos_title:'ଭିଡିଓ', nav_home:'ମୂଳ', nav_videos:'ଭିଡିଓ', nav_consult:'ପରାମର୍ଶ', filter_all:'ସମସ୍ତ', filter_recent:'ନୂଆ', filter_general:'ସାଧାରଣ', filter_diet:'ଖାଦ୍ୟ', search_pl:'ଖୋଜନ୍ତୁ...', no_videos:'ଭିଡିଓ ନାହିଁ', no_match:'ଫଳାଫଳ ନାହିଁ', menu_report:'ରିପୋର୍ଟ', menu_blood:'ରକ୍ତ', menu_chat:'ଚାଟ୍', contact_us:'ଯୋଗାଯୋଗ', contact_text:'କଲ୍ କରନ୍ତୁ।', call_now:'କଲ୍', about_app:'ବିଷୟରେ', about_text:'AI ବିଶ୍ଲେଷଣ।', about_sub:'ଭାରତ।', label_age:'ବୟସ', label_gender:'ଲିଙ୍ଗ', label_diet:'ଖାଦ୍ୟ', label_id:'ID', btn_logout:'ଲଗ୍ ଆଉଟ୍', years:'ବର୍ଷ' },
+            'as': { videos_title:'ভিডিঅ’', nav_home:'গৃহ', nav_videos:'ভিডিঅ’', nav_consult:'পৰামৰ্শ', filter_all:'সকলো', filter_recent:'নতুন', filter_general:'সাধাৰণ', filter_diet:'খাদ্য', search_pl:'বিচাৰক...', no_videos:'ভিডিঅ’ নাই', no_match:'ফলাফল নাই', menu_report:'ৰিপৰ্ট', menu_blood:'তেজ', menu_chat:'কথা', contact_us:'যোগাযোগ', contact_text:'কল কৰক।', call_now:'কল', about_app:'বিষয়ে', about_text:'AI বিশ্লেষণ।', about_sub:'ভাৰত।', label_age:'বয়স', label_gender:'লিংগ', label_diet:'খাদ্য', label_id:'ID', btn_logout:'লগ আউট', years:'বছৰ' },
+            'mni': { videos_title:'ভিদিও', nav_home:'য়ুম', nav_videos:'ভিদিও', nav_consult:'পাউ', filter_all:'পুম্নমক', filter_recent:'অনৌবা', filter_general:'অপুনবা', filter_diet:'চাক', search_pl:'থিবীয়ু...', no_videos:'ভিদিও লৈতে', no_match:'ফংদে', menu_report:'রিপোক', menu_blood:'ই', menu_chat:'ৱারি', contact_us:'পাউ ফাওনবা', contact_text:'কোল তৌবিয়ু।', call_now:'কোল', about_app:'মরমদা', about_text:'AI নৈনবা।', about_sub:'ইন্ দিয়া।', label_age:'চহি', label_gender:'নিপা/নুপী', label_diet:'চাক', label_id:'ID', btn_logout:'থোকপা', years:'চহি' },
+            'ne': { videos_title:'भिडियो', nav_home:'घर', nav_videos:'भिडियो', nav_consult:'सल्लाह', filter_all:'सबै', filter_recent:'नयाँ', filter_general:'सामान्य', filter_diet:'खाना', search_pl:'खोज्नुहोस्...', no_videos:'भिडियो छैन', no_match:'नतिजा छैन', menu_report:'रिपोर्ट', menu_blood:'रगत', menu_chat:'कुराकानी', contact_us:'सम्पर्क', contact_text:'फोन गर्नुहोस्।', call_now:'कल', about_app:'बारेमा', about_text:'AI विश्लेषण।', about_sub:'भारत।', label_age:'उमेर', label_gender:'लिंग', label_diet:'खाना', label_id:'ID', btn_logout:'लग आउट', years:'वर्ष' },
+            'sa': { videos_title:'चलचित्र', nav_home:'गृहम्', nav_videos:'चलचित्र', nav_consult:'परामर्श', filter_all:'सर्वे', filter_recent:'नवीनम्', filter_general:'सामान्य', filter_diet:'आहार', search_pl:'अन्वेषणम्...', no_videos:'नास्ति', no_match:'फलं नास्ति', menu_report:'प्रतिवेदन', menu_blood:'रक्त', menu_chat:'संलाप', contact_us:'संपर्क', contact_text:'आह्वयतु।', call_now:'आह्वयतु', about_app:'विषये', about_text:'AI विश्लेषणम्।', about_sub:'भारते।', label_age:'आयुः', label_gender:'लिङ्ग', label_diet:'आहार', label_id:'अभि', btn_logout:'निर्गमनम्', years:'वर्षाणि' },
+            'sd': { videos_title:'وڊيو', nav_home:'گھر', nav_videos:'وڊيو', nav_consult:'صلاح', filter_all:'سڀ', filter_recent:'نئون', filter_general:'عام', filter_diet:'کاڌو', search_pl:'ڳوليو...', no_videos:'وڊيو ناهي', no_match:'تيجو ناهي', menu_report:'رپورٽ', menu_blood:'رقت', menu_chat:'چيٽ', contact_us:'رابطو', contact_text:'ڪال ڪريو.', call_now:'ڪال', about_app:'بابت', about_text:'AI تجزيو.', about_sub:'ڀارت.', label_age:'عمر', label_gender:'جنس', label_diet:'کاڌو', label_id:'ID', btn_logout:'نڪرڻ', years:'سال' },
+            'doi': { videos_title:'वीडियो', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'सलाह', filter_all:'सारे', filter_recent:'नमां', filter_general:'आम', filter_diet:'खाना', search_pl:'तलाशो...', no_videos:'वीडियो नेईं', no_match:'नतीजा नेईं', menu_report:'रपोट', menu_blood:'खून', menu_chat:'गल्ल', contact_us:'संपर्क', contact_text:'कॉल करो।', call_now:'फोन', about_app:'बारे च', about_text:'AI जांच।', about_sub:'भारत।', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाना', label_id:'ID', btn_logout:'बाहर', years:'बरें' },
+            'kok': { videos_title:'व्हिडिओ', nav_home:'घर', nav_videos:'व्हिडिओ', nav_consult:'सल्लो', filter_all:'सगळें', filter_recent:'नवें', filter_general:'सामान्य', filter_diet:'जेवण', search_pl:'सोद...', no_videos:'ना', no_match:'फळ ना', menu_report:'अहवाल', menu_blood:'रगत', menu_chat:'गजाली', contact_us:'संपर्क', contact_text:'फोन कर.', call_now:'फोन', about_app:'विशीं', about_text:'AI तपासणी.', about_sub:'भारत.', label_age:'पिराय', label_gender:'लिंग', label_diet:'जेवण', label_id:'ID', btn_logout:'भायर', years:'वर्सां' },
+            'brx': { videos_title:'भिडिअ', nav_home:'न', nav_videos:'भिडिअ', nav_consult:'सकनाय', filter_all:'गासै', filter_recent:'गोदान', filter_general:'सरासनस्रा', filter_diet:'आदार', search_pl:'नागिर...', no_videos:'गैया', no_match:'फिथाय गैया', menu_report:'रिफर्त', menu_blood:'थै', menu_chat:'रायज्लाय', contact_us:'जानबुं', contact_text:'कॉल खालाम।', call_now:'कॉल', about_app:'सोमोन्दै', about_text:'AI बिजिरनाय।', about_sub:'भारत।', label_age:'बैस', label_gender:'लिन्गो', label_diet:'आदार', label_id:'ID', btn_logout:'अंखा', years:'बोसोर' },
+            'mai': { videos_title:'वीडियो', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'परामर्श', filter_all:'सब', filter_recent:'नव', filter_general:'सामान्य', filter_diet:'खाए', search_pl:'खोजू...', no_videos:'नहि', no_match:'परिणाम नहि', menu_report:'रपट', menu_blood:'रक्त', menu_chat:'गप्प', contact_us:'संपर्क', contact_text:'कॉल करू।', call_now:'कॉल', about_app:'विषय', about_text:'AI विश्लेषण।', about_sub:'भारत।', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाए', label_id:'ID', btn_logout:'बाहर', years:'वर्ष' },
+            'sat': { videos_title:'ᱵᱤᱰᱤᱭᱳ', nav_home:'ᱚᱲᱟᱜ', nav_videos:'ᱵᱤᱰᱤᱭᱳ', nav_consult:'ᱥᱚᱞᱦᱟ', filter_all:'ᱡᱚᱛᱚ', filter_recent:'ᱱᱟᱣᱟ', filter_general:'ᱥᱟᱫᱷᱟᱨᱚᱱ', filter_diet:'ᱡᱚᱢ', search_pl:'ᱥᱮᱸᱫᱽᱨᱟ...', no_videos:'ᱵᱟᱹᱱᱩᱜᱼᱟ', no_match:'ᱚᱨᱡᱚ ᱵᱟᱹᱱᱩᱜᱼᱟ', menu_report:'ᱨᱤᱯᱚᱴ', menu_blood:'ᱢᱟᱭᱟᱝ', menu_chat:'ᱜᱟᱞᱢᱟᱨᱟᱣ', contact_us:'ᱥᱟᱹᱜᱟᱹᱭ', contact_text:'ᱠᱚᱞ ᱢᱮ.', call_now:'ᱠᱚᱞ', about_app:'ᱵᱟᱵᱚᱛ', about_text:'AI ᱡᱟᱸᱪ.', about_sub:'ᱥᱤᱧᱚᱛ.', label_age:'ᱵᱚᱭᱚᱥ', label_gender:'ᱡᱟᱱᱟᱝ', label_diet:'ᱡᱚᱢ', label_id:'ID', btn_logout:'ᱚᱰᱚᱠ', years:'ᱥᱮᱨᱢᱟ' },
+            'ks': { videos_title:'ویڈیو', nav_home:'گھر', nav_videos:'ویڈیو', nav_consult:'مشورہ', filter_all:'سأری', filter_recent:'نُव', filter_general:'عام', filter_diet:'غذا', search_pl:'ژھانڈِیو...', no_videos:'نہٕ', no_match:'نِتیجہٕ نہٕ', menu_report:'رپورٹ', menu_blood:'خون', menu_chat:'کتھ', contact_us:'رابطہ', contact_text:'فون کریو۔', call_now:'فون', about_app:'متلق', about_text:'AI تجزیہ۔', about_sub:'ہندوستان۔', label_age:'عمر', label_gender:'جنس', label_diet:'غذا', label_id:'ID', btn_logout:'نیرن', years:'ؤری' }
+        };
+
+        // CUSTOM DROPDOWN & MENU LOGIC
+        function toggleCustomDropdown(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            document.querySelectorAll('.custom-dd-container').forEach(el => {
+                if (el.id !== wrapperId) el.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        }
+
+        function selectLang(code, name) {
+            document.getElementById('selected-language-input').value = code;
+            const wrapper = document.getElementById('dd-wrapper-lang');
+            wrapper.querySelector('.c-dd-val').innerText = name;
+            wrapper.querySelectorAll('.c-option').forEach(opt => opt.classList.remove('selected'));
+            const selectedOpt = wrapper.querySelector(`.c-option[data-value="${code}"]`);
+            if(selectedOpt) selectedOpt.classList.add('selected');
+            wrapper.classList.remove('open');
+            applyTranslation(code);
+        }
+
+        function applyTranslation(lang) {
+            localStorage.setItem('userLanguage', lang); // Persist lang
+            const data = translations[lang] || translations['en'];
+            const dataEn = translations['en']; 
+            
+            // Text Content
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.getAttribute('data-translate-key');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                
+                // Dynamic replacement if needed (unlikely for videos page static text but keeping robust)
+                // Using .childNodes ensures we don't wipe icons inside buttons/links
+                let hasTextNode = false;
+                el.childNodes.forEach(node => {
+                    if (node.nodeType === 3 && node.nodeValue.trim() !== '') {
+                        node.nodeValue = text; 
+                        hasTextNode = true;
+                    }
+                });
+                
+                // Fallback for simple elements
+                if(!hasTextNode && el.children.length === 0) {
+                    el.innerText = text;
+                }
+            });
+
+            // Placeholders
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                if(text) el.placeholder = text;
+            });
+            
+            // Titles (for tooltips etc)
+            document.querySelectorAll('[data-translate-title]').forEach(el => {
+                const key = el.getAttribute('data-translate-title');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                if(text) el.title = text;
+            });
+        }
+
+        // --- SAVED LANGUAGE LOAD ---
+        const savedLang = localStorage.getItem('userLanguage') || 'en';
+        document.addEventListener('DOMContentLoaded', () => {
+            // Map codes to names for Dropdown display
+            const nameMap = {
+                'en': 'English', 'hi': 'हिन्दी (Hindi)', 'mr': 'मराठी (Marathi)', 
+                'gu': 'ગુજરાતી (Gujarati)', 'bn': 'বাংলা (Bengali)', 'pa': 'ਪੰਜਾਬੀ (Punjabi)', 
+                'te': 'తెలుగు (Telugu)', 'ta': 'தமிழ் (Tamil)', 'ml': 'മലയാളം (Malayalam)', 
+                'kn': 'ಕನ್ನಡ (Kannada)', 'ur': 'اردو (Urdu)', 'or': 'ଓଡ଼ିଆ (Odia)', 
+                'as': 'অসমীয়া (Assamese)', 'mni': 'মৈতৈলোন্ (Manipuri)', 'ne': 'नेपाली (Nepali)',
+                'sa': 'संस्कृतम् (Sanskrit)', 'sd': 'सिंधी (Sindhi)', 'doi': 'डोगरी (Dogri)',
+                'kok': 'कोंकणी (Konkani)', 'brx': 'बोड़ो (Bodo)', 'mai': 'मैथिली (Maithili)',
+                'sat': 'ᱥᱟᱱᱛᱟᱲᱤ (Santali)', 'ks': 'کٲشُر (Kashmiri)'
+            };
+            
+            if(savedLang) {
+                // Update dropdown visual state
+                const ddVal = document.querySelector('#dd-wrapper-lang .c-dd-val');
+                const opt = document.querySelector(`.c-option[data-value="${savedLang}"]`);
+                if(ddVal && opt) {
+                    ddVal.innerText = nameMap[savedLang];
+                    document.querySelectorAll('.c-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                }
+                applyTranslation(savedLang);
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-dd-container')) {
+                document.querySelectorAll('.custom-dd-container').forEach(el => {
+                    el.classList.remove('open');
+                });
+            }
+        });
+
+        function toggleMenu() {
+            document.getElementById('sideOverlay').classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+        }
+
+        function toggleProfile() {
+            document.getElementById('profileModal').classList.toggle('open');
+            document.body.classList.toggle('menu-open');
+        }
+
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            document.querySelectorAll('.drawer-dropdown').forEach(item => {
+                if(item.id !== id) item.classList.remove('active');
+            });
+            el.classList.toggle('active');
+        }
+
+        // --- VIDEO PAGE LOGIC ---
+        function toggleFilters() {
+            document.getElementById('filterPanel').classList.toggle('active');
+            document.querySelector('.filter-toggle-btn').classList.toggle('active');
+        }
+
+        function applyFilter(type, chip) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+            
+            const cards = document.querySelectorAll('.yt-card');
+            let hasVisible = false;
+
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                let match = false;
+                if (type === 'all' || type === 'recent') match = true;
+                else if (type === 'diet' && (text.includes('diet') || text.includes('food') || text.includes('nutrition'))) match = true;
+                else if (type === 'general' && (!text.includes('diet'))) match = true;
+
+                card.style.display = match ? "block" : "none";
+                if(match) hasVisible = true;
+            });
+            if(document.getElementById('searchInput').value !== "") filterVideos();
+        }
+
+        function filterVideos() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.yt-card');
+            let hasVisible = false;
+
+            cards.forEach(card => {
+                const title = card.querySelector('.yt-title').innerText.toLowerCase();
+                const doc = card.querySelector('.filter-name').innerText.toLowerCase();
+                if (title.includes(query) || doc.includes(query)) {
+                    card.style.display = "block";
+                    hasVisible = true;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+            
+            const noRes = document.getElementById('noResultsMsg');
+            noRes.style.display = (!hasVisible && cards.length > 0) ? "block" : "none";
+        }
+
+        function playVideo(cardElement) {
+            document.querySelectorAll('.yt-card.playing').forEach(card => {
+                if(card !== cardElement) {
+                    card.classList.remove('playing');
+                    const vid = card.querySelector('video');
+                    if(vid) vid.pause();
+                }
+            });
+            cardElement.classList.add('playing');
+            const video = cardElement.querySelector('video');
+            if (video) video.play();
+        }
+
+        // --- ROBUST VOICE SEARCH ---
+        function toggleDictation() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                const btn = document.getElementById('voiceBtn');
+                
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                
+                const currentLang = localStorage.getItem('userLanguage') || 'en';
+                // Basic mapping for voice rec languages
+                const voiceMap = {'en':'en-US','hi':'hi-IN','gu':'gu-IN','bn':'bn-IN','ta':'ta-IN','te':'te-IN','mr':'mr-IN','kn':'kn-IN','ml':'ml-IN'};
+                recognition.lang = voiceMap[currentLang] || 'en-US';
+
+                recognition.start();
+                btn.classList.add('listening');
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('searchInput').value = transcript;
+                    btn.classList.remove('listening');
+                    filterVideos();
+                };
+
+                recognition.onerror = function(event) {
+                    btn.classList.remove('listening');
+                    // alert('Voice input failed.'); // Silent fail better for UX
+                };
+                
+                recognition.onend = function() {
+                    btn.classList.remove('listening');
+                }
+            } else {
+                alert("Voice search requires a supported browser like Chrome.");
+            }
+        }
+    </script>
+</body>
+</html>

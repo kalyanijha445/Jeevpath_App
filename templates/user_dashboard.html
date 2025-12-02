@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeevPath AI - Dashboard</title>
+
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* --- GLOBAL & APP SETTINGS (Unchanged) --- */
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --accent: #D1FAE5;
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.04);
+            --radius-box: 24px;
+            --radius-btn: 50px;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 110px 0 100px; 
+            color: var(--text-dark);
+            transition: 0.3s filter;
+        }
+
+        body.menu-open { overflow: hidden; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- CUSTOM DROPDOWN STYLES --- */
+        select.hidden-real-select { display: none !important; }
+
+        .custom-dd-container {
+            position: relative;
+            width: 100%;
+            border-radius: 16px;
+            background: white;
+            transition: 0.3s;
+        }
+
+        .custom-dd-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            background: transparent;
+            border: 1px solid transparent; 
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .custom-dd-trigger:active, .custom-dd-container.open .custom-dd-trigger {
+            background-color: #f0fdf4;
+            border-color: var(--primary);
+        }
+
+        .c-dd-label { font-size: 0.75rem; color: var(--text-gray); display: block; margin-bottom: 2px; }
+        .c-dd-val { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .c-arrow { color: var(--primary); transition: transform 0.3s; flex-shrink: 0;}
+        
+        .custom-dd-container.open .c-arrow { transform: rotate(180deg); }
+
+        .custom-dd-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            border: 1px solid var(--accent);
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .custom-dd-container.open .custom-dd-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .c-option {
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .c-option:last-child { border-bottom: none; }
+        
+        .c-option:hover, .c-option.selected {
+            background-color: var(--accent);
+            color: var(--primary-dark);
+        }
+        
+        .c-check { display: none; color: var(--primary); }
+        .c-option.selected .c-check { display: block; }
+
+
+        /* --- UI COMPONENTS --- */
+        .glass-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.9);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-btn);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .menu-btn, .user-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: 0.2s;
+            background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: var(--primary); font-size: 1.2rem;
+        }
+        .menu-btn:active, .user-btn:active { transform: scale(0.95); }
+        
+        .header-title {
+            font-weight: 700; font-size: 1rem; color: var(--primary-dark);
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        /* --- SIDE NAVIGATION --- */
+        .side-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            opacity: 0; visibility: hidden; transition: 0.3s; z-index: 2000;
+        }
+        .side-overlay.active { opacity: 1; visibility: visible; }
+
+        .side-drawer {
+            position: fixed; top: 0; left: 0; height: 100%; width: 80%; max-width: 340px;
+            background: var(--white); z-index: 2001;
+            transform: translateX(-110%); transition: cubic-bezier(0.165, 0.84, 0.44, 1) 0.5s;
+            padding: 30px 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; justify-content: space-between;
+            overflow-y: auto;
+            cursor: default;
+        }
+        .side-overlay.active .side-drawer { transform: translateX(0); }
+
+        .brand-block { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+        .brand-logo { width: 40px; height: 40px; object-fit: contain; }
+        .brand-name { font-weight: 700; font-size: 1.3rem; color: var(--primary-dark); }
+
+        .nav-items { display: flex; flex-direction: column; gap: 12px; }
+        .drawer-link {
+            padding: 15px; background: #f3f4f6; border-radius: 15px;
+            font-weight: 500; color: var(--text-dark); display: flex;
+            align-items: center; gap: 12px; transition: 0.2s;
+        }
+        .drawer-link i { color: var(--primary); font-size: 1.1rem; }
+        .drawer-link:active { background: var(--accent); color: var(--primary-dark); }
+
+        .drawer-dropdown { 
+            background: #f3f4f6; border-radius: 15px; overflow: hidden; transition: 0.3s;
+        }
+        .dd-trigger {
+            width: 100%; padding: 15px; background: transparent; border: none;
+            display: flex; align-items: center; justify-content: space-between;
+            font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 500;
+            color: var(--text-dark); cursor: pointer;
+        }
+        .dd-left { display: flex; align-items: center; gap: 12px; }
+        .dd-left i { color: var(--primary); font-size: 1.1rem; }
+        .dd-arrow { font-size: 0.8rem; transition: transform 0.3s; color: var(--text-gray); }
+        
+        .dd-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s;
+            background: white; border-top: 1px solid transparent; opacity: 0;
+        }
+        .drawer-dropdown.active .dd-content {
+            max-height: 300px; padding: 15px; border-top: 1px solid #eee; opacity: 1;
+        }
+        .drawer-dropdown.active .dd-arrow { transform: rotate(180deg); color: var(--primary); }
+        .drawer-dropdown.active { background: white; border: 1px solid var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+
+        .dd-text { font-size: 0.85rem; color: var(--text-gray); line-height: 1.5; }
+        .dd-btn-small { 
+            display: inline-block; margin-top: 10px; padding: 8px 16px; 
+            background: var(--primary); color: white; border-radius: 20px; font-size: 0.8rem;
+        }
+
+        .close-drawer-btn {
+            position: absolute; top: 10px; right: -50px; 
+            color: white; font-size: 2rem; cursor: pointer;
+            background: transparent; border: none; padding: 10px;
+        }
+
+        .version-text { text-align: center; color: var(--text-gray); font-size: 0.8rem; padding: 20px 0 10px; }
+
+        /* --- USER PROFILE MODAL --- */
+        .profile-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 3000;
+            
+            visibility: hidden; 
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.83, 0, 0.17, 1), visibility 0.5s;
+            
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .profile-modal.open { 
+            visibility: visible;
+            transform: translateY(0); 
+        }
+        
+        .profile-header {
+            padding: 40px 20px 20px;
+            background: linear-gradient(135deg, var(--primary), #34D399);
+            color: white; text-align: center;
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); position: relative;
+        }
+        
+        .profile-close-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); width: 35px; height: 35px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; color: white;
+        }
+        
+        .profile-pic-lg {
+            width: 100px; height: 100px; border-radius: 50%; background: white;
+            color: var(--primary); font-size: 2.5rem; display: flex; justify-content: center; align-items: center;
+            margin: 0 auto 15px; border: 4px solid rgba(255,255,255,0.3);
+        }
+
+        .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .profile-email { opacity: 0.9; font-size: 0.9rem; margin-top: 5px; }
+        
+        .profile-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px; margin-top: 10px; }
+        .profile-card-item {
+            background: white; border-radius: 20px; padding: 20px 15px;
+            text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;
+        }
+        .p-icon { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .p-label { display: block; font-size: 0.8rem; color: var(--text-gray); margin-bottom: 5px; }
+        .p-val { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+        
+        .modal-footer-logout { margin-top: auto; padding: 30px; }
+        .logout-pill {
+            display: block; width: 100%; text-align: center; padding: 18px;
+            background: #FFE4E6; color: #DC2626; border-radius: var(--radius-btn);
+            font-weight: 700; transition: 0.2s;
+        }
+
+        /* --- DASHBOARD CONTENT --- */
+        .container-app { padding: 10px 20px; max-width: 600px; margin: 0 auto; position: relative; z-index: 1;}
+        
+        .welcome-card {
+            background: linear-gradient(120deg, var(--text-dark), #374151);
+            color: white; padding: 24px; border-radius: var(--radius-box);
+            margin-bottom: 25px; position: relative; overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .welcome-card h2 { margin: 0; font-size: 1.4rem; z-index: 2; position: relative; }
+        .welcome-card p { margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem; z-index: 2; position: relative; }
+        .anim-circle {
+            position: absolute; background: rgba(255,255,255,0.1); border-radius: 50%;
+            width: 150px; height: 150px; top: -50px; right: -50px;
+            animation: pulse-op 4s infinite;
+        }
+
+        .analysis-section-title { margin: 0 0 15px; font-size: 1rem; color: var(--text-dark); }
+
+        .tabs-grid-wrapper { margin-bottom: 25px; padding: 4px; }
+
+        .tabs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+
+        .tab-radio { display: none; }
+        
+        .tab-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 4px; border-radius: 16px;
+            background: white; border: 1px solid #E5E7EB;
+            color: var(--text-gray); cursor: pointer; transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            height: 100%; min-height: 70px;
+        }
+        
+        .tab-btn-icon { font-size: 1.1rem; margin-bottom: 6px; }
+        .tab-btn-text { font-size: 0.7rem; font-weight: 600; text-align: center; line-height: 1.1; }
+
+        .tab-radio:checked + .tab-btn {
+            background: var(--primary); color: white; border-color: var(--primary);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); transform: translateY(-2px);
+        }
+
+        .upload-grid-app { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .upload-card {
+            background: var(--white); border: 2px dashed #E5E7EB;
+            border-radius: 20px; padding: 20px;
+            text-align: center; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            transition: 0.2s; position: relative; overflow: hidden;
+        }
+        /* Style for preview */
+        .preview-container {
+            grid-column: 1 / -1; 
+            display: flex; gap: 10px; flex-wrap: wrap; 
+        }
+        .thumb-wrapper {
+            position: relative; width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 1px solid #eee;
+        }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+        .thumb-close {
+            position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.5);
+            color: white; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; cursor: pointer; z-index: 5;
+        }
+        /* Full Image Modal Styles could be added, for now simple thumb display */
+        
+        .upload-card input { opacity: 0; position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 10; cursor: pointer; }
+        
+        .up-icon-wrap {
+            width: 44px; height: 44px; background: var(--accent);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            color: var(--primary); font-size: 1.2rem; margin-bottom: 5px;
+        }
+        .up-title { font-weight: 600; font-size: 0.9rem; color: var(--text-dark); }
+        .up-desc { font-size: 0.7rem; color: var(--text-gray); }
+
+        .app-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .span-full { grid-column: 1 / -1; }
+
+        .modern-input-group {
+            position: relative; background: white; border-radius: 16px;
+            padding: 0; border: 1px solid transparent;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: 0.3s;
+        }
+        .modern-input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+        
+        .modern-label {
+            display: block; font-size: 0.75rem; color: var(--text-gray);
+            font-weight: 500; margin-left: 16px; margin-top: 10px; margin-bottom: 2px;
+        }
+        
+        .modern-input {
+            width: 100%; border: none; background: transparent; padding: 4px 16px 12px;
+            font-size: 0.95rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+            color: var(--text-dark); border-radius: 0;
+            -webkit-appearance: none; appearance: none;
+        }
+        
+        textarea.modern-input { min-height: 80px; resize: none; margin-top: 5px; }
+
+        .disease-group { display: none; }
+        .disease-group.active { display: contents; }
+
+        .ai-submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--text-dark) 0%, #111 100%);
+            color: white; border: none; padding: 18px;
+            border-radius: 18px; font-size: 1rem; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            cursor: pointer; position: relative; overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15); transition: transform 0.1s;
+            margin-top: 10px;
+        }
+        .ai-submit-btn:active { transform: scale(0.98); }
+        .star-icon { animation: spin-star 3s linear infinite; font-size: 1.2rem; color: #FCD34D; }
+
+        @keyframes spin-star { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse-op { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
+        @keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- BOTTOM NAV --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            padding: 12px 10px 20px;
+            border-top-left-radius: 25px; border-top-right-radius: 25px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 100;
+        }
+        .b-nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; color: var(--text-gray); transition: 0.3s;
+        }
+        .b-nav-item.active { color: var(--primary); }
+        .b-nav-item i { font-size: 1.3rem; margin-bottom: 2px; transition: 0.3s; }
+        .b-nav-item.active i { transform: translateY(-3px); }
+        .b-nav-text { font-size: 0.7rem; font-weight: 500; }
+        
+        .diet-icon { color: var(--primary); margin-left: 4px; }
+
+        /* --- RESULT SECTION STYLES (Added New) --- */
+        .report-header-block {
+            background: white;
+            border-radius: var(--radius-box);
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: fade-up 0.5s ease;
+        }
+        .report-id-group { display: flex; flex-direction: column; gap: 4px; }
+        .report-title { font-weight: 700; font-size: 1.1rem; color: var(--text-dark); }
+        .report-date { font-size: 0.8rem; color: var(--text-gray); display: flex; align-items: center; gap: 6px;}
+
+        .ai-result-box {
+            background: white;
+            border-radius: var(--radius-box);
+            padding: 30px 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+            border-top: 5px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: fade-up 0.7s ease;
+        }
+        
+        .ai-content { font-size: 1rem; line-height: 1.7; color: #374151; }
+        .ai-content h1, .ai-content h2, .ai-content h3 { 
+            color: var(--primary-dark); font-weight: 700; margin-top: 25px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .ai-content h3:before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; }
+        .ai-content ul { padding-left: 20px; margin-bottom: 20px; }
+        .ai-content li { margin-bottom: 8px; color: var(--text-dark); }
+        .ai-content p { margin-bottom: 16px; }
+        .ai-content strong { color: var(--text-dark); font-weight: 600; }
+        
+        .consult-upsell-card {
+            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+            border: 1px solid var(--accent);
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            animation: fade-up 0.9s ease;
+            box-shadow: var(--shadow-soft);
+        }
+        .c-info h4 { margin: 0 0 5px; color: var(--primary-dark); font-size: 1rem; }
+        .c-info p { margin: 0; font-size: 0.75rem; color: var(--text-gray); max-width: 220px;}
+        
+        .consult-btn {
+            background: var(--white); color: var(--primary);
+            padding: 10px 18px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1); transition: 0.2s;
+            border: 1px solid var(--accent); white-space: nowrap;
+        }
+        .consult-btn:hover { background: var(--primary); color: white; }
+
+        .btn-action-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--text-dark) 0%, #111 100%);
+            color: white; border: none; padding: 18px;
+            border-radius: 18px; font-size: 1rem; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.15); transition: 0.2s;
+            text-decoration: none;
+        }
+        .btn-action-primary:active { transform: scale(0.98); }
+        
+        .disclaimer-box {
+            text-align: center; padding: 20px; margin-top: 20px;
+            background: #F3F4F6; border-radius: 20px; font-size: 0.7rem; color: #9CA3AF;
+        }
+
+        @media print {
+            .glass-header, .footer-actions, .consult-upsell-card, .bottom-nav, .ai-submit-btn, .btn-action-primary { display: none !important; }
+            .container-app { max-width: 100%; padding: 0; }
+            .ai-result-box { border: none; box-shadow: none; }
+            body { padding: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDE MENU -->
+    <div class="side-overlay" id="sideOverlay" onclick="if(event.target === this) toggleMenu()">
+        <button class="close-drawer-btn" onclick="toggleMenu()" aria-label="Close menu">
+            <i class="fa-solid fa-times" aria-hidden="true"></i>
+        </button>
+        
+        <div class="side-drawer">
+            <div>
+                <div class="brand-block">
+                    <img src="static/logo.png" alt="Logo" class="brand-logo">
+                    <div class="brand-name">JEEVPATH</div>
+                </div>
+
+                <!-- Custom Language Dropdown (FULL LIST) -->
+                <div style="margin-bottom: 25px;">
+                     <!-- Real Hidden Select -->
+                    <select id="appLang" class="hidden-real-select"></select>
+                    <!-- Custom UI -->
+                    <div class="custom-dd-container" id="dd-wrapper-lang">
+                        <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-lang')">
+                            <span class="c-dd-val">English</span>
+                            <i class="fa-solid fa-chevron-down c-arrow"></i>
+                        </div>
+                        <div class="custom-dd-options">
+                            <div class="c-option selected" data-value="en" onclick="selectLang('en', 'English')">English <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="hi" onclick="selectLang('hi', 'हिन्दी (Hindi)')">हिन्दी (Hindi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mr" onclick="selectLang('mr', 'मराठी (Marathi)')">मराठी (Marathi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="gu" onclick="selectLang('gu', 'ગુજરાતી (Gujarati)')">ગુજરાતી (Gujarati) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="bn" onclick="selectLang('bn', 'বাংলা (Bengali)')">বাংলা (Bengali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="pa" onclick="selectLang('pa', 'ਪੰਜਾਬੀ (Punjabi)')">ਪੰਜਾਬੀ (Punjabi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="te" onclick="selectLang('te', 'తెలుగు (Telugu)')">తెలుగు (Telugu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ta" onclick="selectLang('ta', 'தமிழ் (Tamil)')">தமிழ் (Tamil) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ml" onclick="selectLang('ml', 'മലയാളം (Malayalam)')">മലയാളം (Malayalam) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kn" onclick="selectLang('kn', 'ಕನ್ನಡ (Kannada)')">ಕನ್ನಡ (Kannada) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ur" onclick="selectLang('ur', 'اردو (Urdu)')">اردو (Urdu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="or" onclick="selectLang('or', 'ଓଡ଼ିଆ (Odia)')">ଓଡ଼ିଆ (Odia) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="as" onclick="selectLang('as', 'অসমীয়া (Assamese)')">অসমীয়া (Assamese) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mni" onclick="selectLang('mni', 'মৈতৈলোন্ (Manipuri)')">মৈতৈলোন্ (Manipuri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ne" onclick="selectLang('ne', 'नेपाली (Nepali)')">नेपाली (Nepali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sa" onclick="selectLang('sa', 'संस्कृतम् (Sanskrit)')">संस्कृतम् (Sanskrit) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sd" onclick="selectLang('sd', 'सिंधी (Sindhi)')">सिंधी (Sindhi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="doi" onclick="selectLang('doi', 'डोगरी (Dogri)')">डोगरी (Dogri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kok" onclick="selectLang('kok', 'कोंकणी (Konkani)')">कोंकणी (Konkani) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="brx" onclick="selectLang('brx', 'बोड़ो (Bodo)')">बोड़ो (Bodo) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mai" onclick="selectLang('mai', 'मैथिली (Maithili)')">मैथिली (Maithili) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sat" onclick="selectLang('sat', 'ᱥᱟᱱᱛᱟᱲᱤ (Santali)')">ᱥᱟᱱᱛᱟᱲᱤ (Santali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ks" onclick="selectLang('ks', 'کٲشُر (Kashmiri)')">کٲشُر (Kashmiri) <i class="fa-solid fa-check c-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-items">
+                    <a href="/reports" class="drawer-link" data-translate-title="menu_report" data-translate-key="menu_report">
+                        <i class="fa-solid fa-file-medical"></i> <span data-translate-key="menu_report">Report History</span>
+                    </a>
+                    <a href="/blood_bank" class="drawer-link" data-translate-title="menu_blood" data-translate-key="menu_blood">
+                        <i class="fa-solid fa-hand-holding-droplet"></i> <span data-translate-key="menu_blood">Blood Bank</span>
+                    </a>
+                    <a href="/chat" class="drawer-link" data-translate-title="menu_chat" data-translate-key="menu_chat">
+                        <i class="fa-solid fa-comments"></i> <span data-translate-key="menu_chat">Chat With Us</span>
+                    </a>
+
+                    <div class="drawer-dropdown" id="dd-contact">
+                        <button type="button" class="dd-trigger" onclick="toggleAccordion('dd-contact')">
+                            <span class="dd-left"><i class="fa-solid fa-phone"></i> <span data-translate-key="contact_us">Contact Us</span></span>
+                            <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content">
+                            <div class="dd-text">
+                                <span data-translate-key="contact_text">Have questions? Call our helpline or visit our main center.</span>
+                                <br><br>
+                                <strong>+91 1800-123-4567</strong><br>
+                                help@jeevpath.com
+                            </div>
+                            <a href="#" class="dd-btn-small" data-translate-key="call_now">Call Now</a>
+                        </div>
+                    </div>
+
+                    <div class="drawer-dropdown" id="dd-about">
+                        <button type="button" class="dd-trigger" onclick="toggleAccordion('dd-about')">
+                            <span class="dd-left"><i class="fa-solid fa-info-circle"></i> <span data-translate-key="about_app">About App</span></span>
+                            <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content">
+                            <div class="dd-text">
+                                <span data-translate-key="about_text">JeevPath AI uses advanced algorithms to analyze medical reports.</span>
+                                <br><br>
+                                <span data-translate-key="about_sub">Designed for Season Specific Diagnosis in India.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="version-text">v1.0.4 Application</div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="profile-close-btn" onclick="toggleProfile()" aria-label="Close profile">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="profile-pic-lg">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+        </div>
+
+        <div class="profile-data-grid">
+            <div class="profile-card-item">
+                <i class="fa-solid fa-calendar-day p-icon"></i>
+                <span class="p-label" data-translate-key="label_age">Age</span>
+                <span class="p-val">{{ user.age }} <span data-translate-key="years">Years</span></span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-venus-mars p-icon"></i>
+                <span class="p-label" data-translate-key="label_gender">Gender</span>
+                <span class="p-val">{{ user.gender }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-utensils p-icon"></i>
+                <span class="p-label" data-translate-key="label_diet">Diet</span>
+                <span class="p-val">{{ user.diet }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-file-medical-alt p-icon"></i>
+                <span class="p-label" data-translate-key="label_id">ID</span>
+                <span class="p-val">#JP8291</span>
+            </div>
+        </div>
+
+        <div class="modal-footer-logout">
+            <a href="/logout" class="logout-pill">
+                <i class="fa-solid fa-right-from-bracket"></i> <span data-translate-key="btn_logout">Logout Securely</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-header">
+        {% if result %}
+             <a href="/user_dashboard" class="menu-btn" aria-label="Back to dashboard">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            </a>
+        {% else %}
+            <button class="menu-btn" onclick="toggleMenu()" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+        {% endif %}
+        
+        <div class="header-title">
+            {% if result %}
+                <i class="fa-solid fa-file-medical-alt"></i> REPORT ANALYSIS
+            {% else %}
+                <i class="fa-solid fa-circle-notch"></i> <span data-translate-key="dashboard_title">Dashboard</span>
+            {% endif %}
+        </div>
+        
+        <button class="user-btn" onclick="toggleProfile()" aria-label="Open profile">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="container-app">
+        
+        <!-- Toggle: Show Result View if variable exists -->
+        {% if result %}
+            
+            <!-- Report Info Card -->
+            <div class="report-header-block">
+                <div class="report-id-group">
+                    <span class="report-title">Health Assessment</span>
+                    <span class="report-date">
+                        <i class="fa-regular fa-calendar"></i>
+                        <script>document.write(new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }))</script>
+                    </span>
+                </div>
+                <div style="text-align: right; color: var(--primary);">
+                    <i class="fa-solid fa-check-circle" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+
+            <!-- AI Result Content -->
+            <div class="ai-result-box">
+                <div class="ai-content">
+                    {{ result | safe }}
+                </div>
+            </div>
+
+            <!-- Consultation Upsell -->
+            <div class="consult-upsell-card">
+                <div class="c-info">
+                    <h4>Second Opinion?</h4>
+                    <p>Book a 1-on-1 video call with our certified doctors for confirmation.</p>
+                </div>
+                <a href="/consult" class="consult-btn"><i class="fa-solid fa-user-doctor"></i> Book Now</a>
+            </div>
+            
+            <!-- New Report Button -->
+            <a href="/user_dashboard" class="btn-action-primary" style="margin-bottom: 10px; background: white; color: var(--text-dark); border: 1px solid #ddd;">
+               <i class="fa-solid fa-rotate-right"></i> Analyze Another
+            </a>
+
+            <!-- Print Action - Only for English -->
+            {% if selected_lang == 'en' %}
+            <a href="{{ url_for('download_pdf', report_id=report_id) }}" class="btn-action-primary">
+                <i class="fa-solid fa-download"></i> SAVE PDF REPORT
+            </a>
+            {% endif %}
+
+            <!-- Disclaimer -->
+            <div class="disclaimer-box">
+                <i class="fa-solid fa-circle-info"></i> MEDICAL DISCLAIMER: This analysis is generated by JeevPath AI based on inputs provided. 
+                It is for informational purposes only. Always consult a certified professional for medical decisions.
+            </div>
+
+        <!-- Else: Show Standard Dashboard Form -->
+        {% else %}
+            
+            <div class="welcome-card">
+                <div class="anim-circle"></div>
+                <h2 data-translate-key="welcome_user" data-username="{{ user.name }}">Namaste, {{ user.name }}</h2>
+                <p data-translate-key="welcome_sub">Your AI health companion is ready.</p>
+            </div>
+
+            <form action="/analyze_report" method="POST" enctype="multipart/form-data">
+                
+                <!-- Hidden Language Input for Backend -->
+                <input type="hidden" name="language" id="selected-language-input" value="en">
+
+                <h3 id="analysisTitle" class="analysis-section-title" data-translate-key="select_analysis">Select Analysis</h3>
+                <div class="tabs-grid-wrapper">
+                    <div class="tabs-grid">
+                        <div>
+                            <input type="radio" id="tab1" name="checkup_type" value="General Checkup" class="tab-radio" checked onchange="updateForm('General Checkup')">
+                            <label for="tab1" class="tab-btn"><i class="fa-solid fa-heart-pulse tab-btn-icon"></i><span class="tab-btn-text" data-translate-key="tab_general">General</span></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="tab2" name="checkup_type" value="Dengue Fever" class="tab-radio" onchange="updateForm('Dengue Fever')">
+                            <label for="tab2" class="tab-btn"><i class="fa-solid fa-mosquito tab-btn-icon"></i><span class="tab-btn-text" data-translate-key="tab_dengue">Dengue</span></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="tab3" name="checkup_type" value="Malaria" class="tab-radio" onchange="updateForm('Malaria')">
+                            <label for="tab3" class="tab-btn"><i class="fa-solid fa-virus tab-btn-icon"></i><span class="tab-btn-text" data-translate-key="tab_malaria">Malaria</span></label>
+                        </div>
+                        <div>
+                            <input type="radio" id="tab4" name="checkup_type" value="Typhoid" class="tab-radio" onchange="updateForm('Typhoid')">
+                            <label for="tab4" class="tab-btn"><i class="fa-solid fa-temperature-arrow-up tab-btn-icon"></i><span class="tab-btn-text" data-translate-key="tab_typhoid">Typhoid</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Grid (UPDATED FOR MULTIPLE FILES) -->
+                <div class="upload-grid-app">
+                    <label class="upload-card">
+                        <div class="up-icon-wrap"><i class="fa-solid fa-image"></i></div>
+                        <span class="up-title" data-translate-key="upload_title">Upload</span>
+                        <span class="up-desc" id="hintTextGallery" data-translate-key="upload_hint">Select File</span>
+                        <input type="file" name="report_gallery" id="multi-file-input" accept="image/*" multiple onchange="handleFileSelect(event)">
+                    </label>
+                    <label class="upload-card">
+                        <div class="up-icon-wrap"><i class="fa-solid fa-camera"></i></div>
+                        <span class="up-title" data-translate-key="camera_title">Camera</span>
+                        <span class="up-desc" id="hintTextCamera" data-translate-key="camera_hint">Click Photo</span>
+                        <input type="file" name="report_camera" accept="image/*" capture="environment">
+                    </label>
+                </div>
+                <!-- Container for thumbnails -->
+                <div id="preview-container" class="preview-container"></div>
+
+                <div class="app-form-grid">
+                    
+                    <div class="modern-input-group">
+                        <label class="modern-label" for="inp_age" data-translate-key="label_age">Age</label>
+                        <input type="number" id="inp_age" name="age" value="{{ user.age }}" class="modern-input" required>
+                    </div>
+                    
+                    <!-- GENDER DROPDOWN (CUSTOM) -->
+                    <div>
+                        <!-- Hidden Real Input -->
+                        <select id="inp_gender" name="gender" class="hidden-real-select">
+                            <option value="{{ user.gender }}">{{ user.gender }}</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <!-- Custom UI -->
+                        <div class="custom-dd-container" id="dd-wrapper-gender">
+                            <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-gender')" data-selected-t-key="">
+                                <div><span class="c-dd-label" data-translate-key="label_gender">Gender</span><span class="c-dd-val">{{ user.gender }}</span></div>
+                                <i class="fa-solid fa-venus-mars c-arrow"></i>
+                            </div>
+                            <div class="custom-dd-options">
+                                <div class="c-option" onclick="selectOption('inp_gender', 'Male', 'Male', 'dd-wrapper-gender')" data-t-key="opt_male">Male <i class="fa-solid fa-check c-check"></i></div>
+                                <div class="c-option" onclick="selectOption('inp_gender', 'Female', 'Female', 'dd-wrapper-gender')" data-t-key="opt_female">Female <i class="fa-solid fa-check c-check"></i></div>
+                                <div class="c-option" onclick="selectOption('inp_gender', 'Other', 'Other', 'dd-wrapper-gender')" data-t-key="opt_other">Other <i class="fa-solid fa-check c-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DIET DROPDOWN (CUSTOM) -->
+                    <div class="span-full">
+                         <select id="inp_diet" name="diet" class="hidden-real-select">
+                            <option value="{{ user.diet }}">{{ user.diet }}</option>
+                            <option value="Veg">Vegetarian</option>
+                            <option value="Non-Veg">Non-Vegetarian</option>
+                            <option value="Vegan">Vegan</option>
+                        </select>
+                        <div class="custom-dd-container" id="dd-wrapper-diet">
+                            <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-diet')" data-selected-t-key="">
+                                <div><span class="c-dd-label" data-translate-key="label_diet">Dietary Preference <i class="fa-solid fa-carrot diet-icon"></i></span><span class="c-dd-val">{{ user.diet }}</span></div>
+                                <i class="fa-solid fa-chevron-down c-arrow"></i>
+                            </div>
+                            <div class="custom-dd-options">
+                                <div class="c-option" onclick="selectOption('inp_diet', 'Veg', 'Vegetarian', 'dd-wrapper-diet')" data-t-key="opt_veg">Vegetarian <i class="fa-solid fa-check c-check"></i></div>
+                                <div class="c-option" onclick="selectOption('inp_diet', 'Non-Veg', 'Non-Vegetarian', 'dd-wrapper-diet')" data-t-key="opt_nonveg">Non-Vegetarian <i class="fa-solid fa-check c-check"></i></div>
+                                <div class="c-option" onclick="selectOption('inp_diet', 'Vegan', 'Vegan', 'dd-wrapper-diet')" data-t-key="opt_vegan">Vegan <i class="fa-solid fa-check c-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modern-input-group">
+                        <label class="modern-label" for="inp_height" data-translate-key="label_height">Height (CM)</label>
+                        <input type="number" id="inp_height" name="height" class="modern-input" placeholder="e.g 175" data-translate-placeholder="pl_height">
+                    </div>
+                    
+                    <div class="modern-input-group">
+                        <label class="modern-label" for="inp_weight" data-translate-key="label_weight">Weight (KG)</label>
+                        <input type="number" id="inp_weight" name="weight" class="modern-input" placeholder="e.g 70" data-translate-placeholder="pl_weight">
+                    </div>
+
+                    <!-- 1. GENERAL (With New Fields) -->
+                    <div id="fields-general" class="disease-group active">
+                        <div class="modern-input-group">
+                            <label class="modern-label" for="inp_bp" data-translate-key="label_bp">BP Level</label>
+                            <input type="text" id="inp_bp" name="bp" class="modern-input" placeholder="120/80">
+                        </div>
+                        <div class="modern-input-group">
+                            <label class="modern-label" for="inp_sugar" data-translate-key="label_sugar">Fasting Sugar</label>
+                            <input type="text" id="inp_sugar" name="sugar" class="modern-input" placeholder="90 mg/dL">
+                        </div>
+                        <div class="modern-input-group">
+                            <label class="modern-label">Body Temp (F)</label>
+                            <input type="text" name="temp" class="modern-input" placeholder="98.6">
+                        </div>
+                        <div class="modern-input-group">
+                            <label class="modern-label">Heart Rate (BPM)</label>
+                            <input type="text" name="heart_rate" class="modern-input" placeholder="72">
+                        </div>
+                        <div class="modern-input-group span-full">
+                            <label class="modern-label" for="inp_thyroid" data-translate-key="label_thyroid">Thyroid (TSH)</label>
+                            <input type="text" id="inp_thyroid" name="thyroid" class="modern-input" placeholder="5.5 mIU/L">
+                        </div>
+                    </div>
+
+                    <!-- 2. DENGUE -->
+                    <div id="fields-dengue" class="disease-group">
+                        <div class="modern-input-group">
+                            <label class="modern-label" for="inp_platelets" data-translate-key="label_platelets">Platelets</label>
+                            <input type="text" id="inp_platelets" name="platelets" class="modern-input" placeholder="1.5 Lakhs">
+                        </div>
+                        <div class="modern-input-group">
+                            <label class="modern-label" for="inp_feverdays" data-translate-key="label_feverdays">Fever Days</label>
+                            <input type="number" id="inp_feverdays" name="fever_days" class="modern-input" placeholder="3">
+                        </div>
+                        <!-- Pain Custom Dropdown -->
+                        <div class="span-full">
+                             <select id="inp_pain" name="pain_level" class="hidden-real-select">
+                                <option value="Mild">Mild Discomfort</option>
+                                <option value="Moderate">Moderate Pain</option>
+                                <option value="Severe">Severe (Breaking Bone Pain)</option>
+                            </select>
+                            <div class="custom-dd-container" id="dd-wrapper-pain">
+                                <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-pain')" data-selected-t-key="">
+                                    <div><span class="c-dd-label" data-translate-key="label_pain">Body Pain</span><span class="c-dd-val">Select Level...</span></div>
+                                    <i class="fa-solid fa-circle-exclamation c-arrow"></i>
+                                </div>
+                                <div class="custom-dd-options">
+                                    <div class="c-option" onclick="selectOption('inp_pain', 'Mild', 'Mild Discomfort', 'dd-wrapper-pain')" data-t-key="opt_pain_mild">Mild Discomfort <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_pain', 'Moderate', 'Moderate Pain', 'dd-wrapper-pain')" data-t-key="opt_pain_moderate">Moderate Pain <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_pain', 'Severe', 'Severe (Breaking Bone Pain)', 'dd-wrapper-pain')" data-t-key="opt_pain_severe">Severe (Breaking Bone Pain) <i class="fa-solid fa-check c-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. MALARIA -->
+                    <div id="fields-malaria" class="disease-group">
+                         <!-- Shivering Custom Dropdown -->
+                         <div>
+                             <select id="inp_shivering" name="shivering" class="hidden-real-select">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes, Severe Shivering</option>
+                            </select>
+                            <div class="custom-dd-container" id="dd-wrapper-shiver">
+                                <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-shiver')" data-selected-t-key="">
+                                    <div><span class="c-dd-label" data-translate-key="label_shiver">Shivering</span><span class="c-dd-val">No</span></div>
+                                    <i class="fa-solid fa-chevron-down c-arrow"></i>
+                                </div>
+                                <div class="custom-dd-options">
+                                    <div class="c-option" onclick="selectOption('inp_shivering', 'No', 'No', 'dd-wrapper-shiver')" data-t-key="no">No <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_shivering', 'Yes', 'Yes, Severe Shivering', 'dd-wrapper-shiver')" data-t-key="opt_shiver_yes">Yes, Severe Shivering <i class="fa-solid fa-check c-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Fever Pattern Custom -->
+                        <div>
+                             <select id="inp_feverpattern" name="fever_pattern" class="hidden-real-select">
+                                <option value="Continuous">Continuous</option>
+                                <option value="Intermittent">Comes and Goes (Every 48hrs)</option>
+                            </select>
+                            <div class="custom-dd-container" id="dd-wrapper-fp">
+                                <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-fp')" data-selected-t-key="">
+                                    <div><span class="c-dd-label" data-translate-key="label_fp">Fever Pattern</span><span class="c-dd-val">Continuous</span></div>
+                                    <i class="fa-solid fa-chevron-down c-arrow"></i>
+                                </div>
+                                <div class="custom-dd-options">
+                                    <div class="c-option" onclick="selectOption('inp_feverpattern', 'Continuous', 'Continuous', 'dd-wrapper-fp')" data-t-key="opt_fp_cont">Continuous <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_feverpattern', 'Intermittent', 'Comes and Goes (Every 48hrs)', 'dd-wrapper-fp')" data-t-key="opt_fp_int">Comes and Goes (Every 48hrs) <i class="fa-solid fa-check c-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modern-input-group span-full">
+                            <label class="modern-label" for="inp_travel" data-translate-key="label_travel">Recent Travel (Forest/Village)</label>
+                            <input type="text" id="inp_travel" name="travel_hist" class="modern-input" placeholder="Location visited..." data-translate-placeholder="pl_location">
+                        </div>
+                    </div>
+
+                    <!-- 4. TYPHOID -->
+                    <div id="fields-typhoid" class="disease-group">
+                        <!-- Stomach Custom -->
+                         <div>
+                             <select id="inp_stomach" name="stomach_pain" class="hidden-real-select">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                            <div class="custom-dd-container" id="dd-wrapper-stp">
+                                <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-stp')" data-selected-t-key="">
+                                    <div><span class="c-dd-label" data-translate-key="label_stomach">Stomach Pain</span><span class="c-dd-val">No</span></div>
+                                    <i class="fa-solid fa-chevron-down c-arrow"></i>
+                                </div>
+                                <div class="custom-dd-options">
+                                    <div class="c-option" onclick="selectOption('inp_stomach', 'No', 'No', 'dd-wrapper-stp')" data-t-key="no">No <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_stomach', 'Yes', 'Yes', 'dd-wrapper-stp')" data-t-key="yes">Yes <i class="fa-solid fa-check c-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Appetite Custom -->
+                        <div>
+                             <select id="inp_appetite" name="appetite" class="hidden-real-select">
+                                <option value="Normal">Normal</option>
+                                <option value="Loss of Appetite">Loss of Appetite</option>
+                                <option value="Extreme Weakness">Extreme Weakness</option>
+                            </select>
+                            <div class="custom-dd-container" id="dd-wrapper-apt">
+                                <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-apt')" data-selected-t-key="">
+                                    <div><span class="c-dd-label" data-translate-key="label_appetite">Appetite</span><span class="c-dd-val">Normal</span></div>
+                                    <i class="fa-solid fa-chevron-down c-arrow"></i>
+                                </div>
+                                <div class="custom-dd-options">
+                                    <div class="c-option" onclick="selectOption('inp_appetite', 'Normal', 'Normal', 'dd-wrapper-apt')" data-t-key="opt_apt_normal">Normal <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_appetite', 'Loss of Appetite', 'Loss of Appetite', 'dd-wrapper-apt')" data-t-key="opt_apt_loss">Loss of Appetite <i class="fa-solid fa-check c-check"></i></div>
+                                    <div class="c-option" onclick="selectOption('inp_appetite', 'Extreme Weakness', 'Extreme Weakness', 'dd-wrapper-apt')" data-t-key="opt_apt_weak">Extreme Weakness <i class="fa-solid fa-check c-check"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modern-input-group span-full">
+                        <label class="modern-label" for="inp_desc" data-translate-key="label_desc">Symptoms & Problems *</label>
+                        <textarea id="inp_desc" name="description" class="modern-input" placeholder="Type here..." data-translate-placeholder="pl_type"></textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="ai-submit-btn">
+                    <i class="fa-solid fa-wand-magic-sparkles star-icon" aria-hidden="true"></i>
+                    <span data-translate-key="btn_run_analysis">RUN ANALYSIS</span>
+                </button>
+
+            </form>
+        
+        {% endif %}
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <a href="#" class="b-nav-item active"><i class="fa-solid fa-house" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_home">Home</span></a>
+        <a href="/videos" class="b-nav-item"><i class="fa-brands fa-youtube" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_videos">Videos</span></a>
+        <a href="/consult" class="b-nav-item"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i><span class="b-nav-text" data-translate-key="nav_consult">Consult</span></a>
+    </div>
+
+
+    <script>
+        const translations = {
+            'en': { dashboard_title:'Dashboard', welcome_user:'Namaste, {userName}', welcome_sub:'Your AI health companion is ready.', select_analysis:'Select Analysis', tab_general:'General', tab_dengue:'Dengue', tab_malaria:'Malaria', tab_typhoid:'Typhoid', upload_title:'Upload', upload_hint:'Select File', camera_title:'Camera', camera_hint:'Click Photo', label_age:'Age', label_gender:'Gender', label_diet:'Dietary Preference', label_height:'Height (CM)', label_weight:'Weight (KG)', label_bp:'BP Level', label_sugar:'Fasting Sugar', label_thyroid:'Thyroid (TSH)', label_platelets:'Platelets', label_feverdays:'Fever Days', label_pain:'Body Pain', label_shiver:'Shivering', label_fp:'Fever Pattern', label_travel:'Recent Travel', label_stomach:'Stomach Pain', label_appetite:'Appetite', label_desc:'Symptoms & Problems *', btn_run_analysis:'RUN ANALYSIS', nav_home:'Home', nav_videos:'Videos', nav_consult:'Consult', menu_report:'Report History', menu_blood:'Blood Bank', menu_chat:'Chat With Us', contact_us:'Contact Us', contact_text:'Have questions? Call our helpline or visit our main center.', call_now:'Call Now', about_app:'About App', about_text:'JeevPath AI uses advanced algorithms to analyze medical reports.', about_sub:'Designed for Season Specific Diagnosis in India.', label_id:'ID', btn_logout:'Logout Securely', opt_male: 'Male', opt_female: 'Female', opt_other: 'Other', opt_veg:'Vegetarian', opt_nonveg:'Non-Vegetarian', opt_vegan:'Vegan', opt_pain_mild:'Mild Discomfort', opt_pain_moderate:'Moderate Pain', opt_pain_severe:'Severe (Breaking Bone Pain)', no:'No', yes:'Yes', opt_shiver_yes:'Yes, Severe Shivering', opt_fp_cont:'Continuous', opt_fp_int:'Comes & Goes', opt_apt_normal:'Normal', opt_apt_loss:'Loss of Appetite', opt_apt_weak:'Extreme Weakness', pl_location:'Location...', pl_type:'Type here...', years:'Years', pl_height: 'e.g 175', pl_weight: 'e.g 70' },
+            'hi': { dashboard_title:'डैशबोर्ड', welcome_user:'नमस्ते, {userName}', welcome_sub:'आपका एआई स्वास्थ्य साथी तैयार है।', select_analysis:'विश्लेषण चुनें', tab_general:'सामान्य', tab_dengue:'डेंगू', tab_malaria:'मलेरिया', tab_typhoid:'टाइफाइड', upload_title:'अपलोड', upload_hint:'फाइल चुनें', camera_title:'कैमरा', camera_hint:'फोटो लें', label_age:'आयु', label_gender:'लिंग', label_diet:'आहार वरीयता', label_height:'ऊंचाई (CM)', label_weight:'वजन (KG)', label_bp:'बीपी स्तर', label_sugar:'फास्टिंग शुगर', label_thyroid:'थायराइड (TSH)', label_platelets:'प्लेटलेट्स', label_feverdays:'बुखार के दिन', label_pain:'शरीर दर्द', label_shiver:'कंपकंपी', label_fp:'बुखार पैटर्न', label_travel:'हालिया यात्रा', label_stomach:'पेट दर्द', label_appetite:'भूख', label_desc:'लक्षण और समस्याएं *', btn_run_analysis:'विश्लेषण करें', nav_home:'होम', nav_videos:'वीडियो', nav_consult:'परामर्श', menu_report:'रिपोर्ट इतिहास', menu_blood:'ब्लड बैंक', menu_chat:'चैट करें', contact_us:'संपर्क करें', contact_text:'प्रश्न हैं? हेल्पलाइन पर कॉल करें या मुख्य केंद्र पर जाएं।', call_now:'कॉल करें', about_app:'ऐप के बारे में', about_text:'JeevPath AI मेडिकल रिपोर्ट का विश्लेषण करने के लिए उन्नत एल्गोरिदम का उपयोग करता है।', about_sub:'भारत में विशिष्ट रोगों के निदान के लिए बनाया गया।', label_id:'आईडी', btn_logout:'लॉग आउट करें', opt_male: 'पुरुष', opt_female: 'महिला', opt_other: 'अन्य', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'वेगन', opt_pain_mild:'हल्का', opt_pain_moderate:'मध्यम दर्द', opt_pain_severe:'गंभीर दर्द', no:'नहीं', yes:'हाँ', opt_shiver_yes:'हाँ, तेज कंपकंपी', opt_fp_cont:'निरंतर', opt_fp_int:'आता-जाता है', opt_apt_normal:'सामान्य', opt_apt_loss:'भूख में कमी', opt_apt_weak:'अत्यधिक कमजोरी', pl_location:'स्थान...', pl_type:'यहाँ लिखें...', years:'वर्ष', pl_height: 'उदा. 175', pl_weight: 'उदा. 70' },
+            'mr': { dashboard_title:'डॅशबोर्ड', welcome_user:'नमस्कार, {userName}', welcome_sub:'तुमचा एआय आरोग्य साथी सज्ज आहे.', select_analysis:'विश्लेषण निवडा', tab_general:'सामान्य', tab_dengue:'डेंग्यू', tab_malaria:'मलेरिया', tab_typhoid:'टायफॉइड', upload_title:'अपलोड', upload_hint:'फाईल निवडा', camera_title:'कॅमेरा', camera_hint:'फोटो काढा', label_age:'वय', label_gender:'लिंग', label_diet:'आहार प्राधान्य', label_height:'उंची (CM)', label_weight:'वजन (KG)', label_bp:'बीपी स्तर', label_sugar:'फास्टिंग शुगर', label_thyroid:'थायरॉईड (TSH)', label_platelets:'प्लेटलेट्स', label_feverdays:'तापाचे दिवस', label_pain:'अंगदुखी', label_shiver:'हुडहुडी', label_fp:'ताप प्रकार', label_travel:'अलीकडील प्रवास', label_stomach:'पोटदुखी', label_appetite:'भूक', label_desc:'लक्षणे आणि समस्या *', btn_run_analysis:'विश्लेषण करा', nav_home:'होम', nav_videos:'व्हिडिओ', nav_consult:'सल्ला', menu_report:'रिपोर्ट इतिहास', menu_blood:'रक्त पेढी', menu_chat:'गप्पा मारा', contact_us:'संपर्क साधा', contact_text:'प्रश्न आहेत? हेल्पलाइनवर कॉल करा.', call_now:'कॉल करा', about_app:'ॲप बद्दल', about_text:'JeevPath AI प्रगत अल्गोरिदम वापरते.', about_sub:'भारतासाठी डिझाइन केलेले.', label_id:'आयडी', btn_logout:'बाहेर पडणे', opt_male: 'पुरुष', opt_female: 'स्त्री', opt_other: 'इतर', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'व्हेगन', opt_pain_mild:'सौम्य', opt_pain_moderate:'मध्यम', opt_pain_severe:'तीव्र वेदना', no:'नाही', yes:'होय', opt_shiver_yes:'होय, तीव्र', opt_fp_cont:'सतत', opt_fp_int:'येणारा जाणारा', opt_apt_normal:'सामान्य', opt_apt_loss:'भूक मंदावणे', opt_apt_weak:'अशक्तपणा', pl_location:'स्थान...', pl_type:'इथे लिहा...', years:'वर्षे', pl_height: 'उदा. 175', pl_weight: 'उदा. 70' },
+            'gu': { dashboard_title:'ડેશબોર્ડ', welcome_user:'નમસ્તે, {userName}', welcome_sub:'તમારા AI સાથી તૈયાર છે.', select_analysis:'વિશ્લેષણ પસંદ કરો', tab_general:'સામાન્ય', tab_dengue:'ડેન્ગ્યુ', tab_malaria:'મેલેરિયા', tab_typhoid:'ટાઇફોઇડ', upload_title:'અપલોડ', upload_hint:'ફાઇલ પસંદ કરો', camera_title:'કેમેરા', camera_hint:'ફોટો લો', label_age:'ઉંમર', label_gender:'લિંગ', label_diet:'ખોરાક પસંદગી', label_height:'ઊંચાઈ (CM)', label_weight:'વજન (KG)', label_bp:'BP સ્તર', label_sugar:'ફાસ્ટિંગ સુગર', label_thyroid:'થાઇરોઇડ (TSH)', label_platelets:'પ્લેટલેટ્સ', label_feverdays:'તાવના દિવસો', label_pain:'શરીરનો દુખાવો', label_shiver:'ધ્રુજારી', label_fp:'તાવ પેટર્ન', label_travel:'તાજેતરનો પ્રવાસ', label_stomach:'પેટમાં દુખાવો', label_appetite:'ભૂખ', label_desc:'લક્ષણો અને સમસ્યાઓ *', btn_run_analysis:'વિશ્લેષણ કરો', nav_home:'હોમ', nav_videos:'વિડિઓ', nav_consult:'સલાહ', menu_report:'રિપોર્ટ ઇતિહાસ', menu_blood:'બ્લડ બેંક', menu_chat:'વાતચીત', contact_us:'સંપર્ક', contact_text:'પ્રશ્નો છે? હેલ્પલાઇન પર કોલ કરો.', call_now:'કોલ કરો', about_app:'એપ્લિકેશન વિશે', about_text:'JeevPath AI અદ્યતન એલ્ગોરિધમ્સનો ઉપયોગ કરે છે.', about_sub:'ભારત માટે બનાવેલ.', label_id:'ID', btn_logout:'લોગ આઉટ', opt_male: 'પુરુષ', opt_female: 'સ્ત્રી', opt_other: 'અન્ય', opt_veg:'શાકાહારી', opt_nonveg:'માસાહારી', opt_vegan:'વેગન', opt_pain_mild:'હળવો', opt_pain_moderate:'મધ્યમ', opt_pain_severe:'તીવ્ર', no:'ના', yes:'હા', opt_shiver_yes:'હા, તીવ્ર', opt_fp_cont:'સતત', opt_fp_int:'આવતો જતો', opt_apt_normal:'સામાન્ય', opt_apt_loss:'ભૂખ ઓછી', opt_apt_weak:'નબળાઈ', pl_location:'સ્થાન...', pl_type:'અહીં લખો...', years:'વર્ષ', pl_height: 'જેમ કે 175', pl_weight: 'જેમ કે 70' },
+            'bn': { dashboard_title:'ড্যাশবোর্ড', welcome_user:'নমস্কার, {userName}', welcome_sub:'আপনার AI সঙ্গী প্রস্তুত।', select_analysis:'বিশ্লেষণ নির্বাচন', tab_general:'সাধারণ', tab_dengue:'ডেঙ্গু', tab_malaria:'ম্যালেরিয়া', tab_typhoid:'টাইফয়েড', upload_title:'আপলোড', upload_hint:'ফাইল বাছুন', camera_title:'ক্যামেরা', camera_hint:'ছবি তুলুন', label_age:'বয়স', label_gender:'লিঙ্গ', label_diet:'খাদ্য পছন্দ', label_height:'উচ্চতা (CM)', label_weight:'ওজন (KG)', label_bp:'রক্তচাপ', label_sugar:'ফাস্টিং সুগার', label_thyroid:'থাইরয়েড (TSH)', label_platelets:'প্লেটলেট', label_feverdays:'জ্বরের দিন', label_pain:'শরীর ব্যথা', label_shiver:'কাঁপুনি', label_fp:'জ্বরের ধরন', label_travel:'সাম্প্রতিক ভ্রমণ', label_stomach:'পেট ব্যথা', label_appetite:'ক্ষুধা', label_desc:'লক্ষণ এবং সমস্যা *', btn_run_analysis:'বিশ্লেষণ করুন', nav_home:'হোম', nav_videos:'ভিডিও', nav_consult:'পরামর্শ', menu_report:'রিপোর্ট ইতিহাস', menu_blood:'ব্লাড ব্যাংক', menu_chat:'চ্যাট করুন', contact_us:'যোগাযোগ', contact_text:'প্রশ্ন আছে? কল করুন।', call_now:'কল করুন', about_app:'অ্যাপ সম্পর্কে', about_text:'JeevPath AI মেডিকেল রিপোর্ট বিশ্লেষণ করে।', about_sub:'ভারতের জন্য ডিজাইন করা।', label_id:'ID', btn_logout:'লগ আউট', opt_male: 'পুরুষ', opt_female: 'মহিলা', opt_other: 'অন্যান্য', opt_veg:'নিরামিষ', opt_nonveg:'আমিষ', opt_vegan:'ভেগান', opt_pain_mild:'হালকা', opt_pain_moderate:'মাঝারি', opt_pain_severe:'তীব্র', no:'না', yes:'হ্যাঁ', opt_shiver_yes:'হ্যাঁ, তীব্র', opt_fp_cont:'ক্রমাগত', opt_fp_int:'থেমে থেমে', opt_apt_normal:'স্বাভাবিক', opt_apt_loss:'ক্ষুধা কম', opt_apt_weak:'চরম দুর্বলতা', pl_location:'স্থান...', pl_type:'এখানে লিখুন...', years:'বছর', pl_height: 'উদাঃ 175', pl_weight: 'উদাঃ 70' },
+            'pa': { dashboard_title:'ਡੈਸ਼ਬੋਰਡ', welcome_user:'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, {userName}', welcome_sub:'ਤੁਹਾਡਾ AI ਸਾਥੀ ਤਿਆਰ ਹੈ।', select_analysis:'ਵਿਸ਼ਲੇਸ਼ਣ ਚੁਣੋ', tab_general:'ਆਮ', tab_dengue:'ਡੇਂਗੂ', tab_malaria:'ਮਲੇਰੀਆ', tab_typhoid:'ਟਾਈਫਾਈਡ', upload_title:'ਅਪਲੋਡ', upload_hint:'ਫਾਇਲ ਚੁਣੋ', camera_title:'ਕੈਮਰਾ', camera_hint:'ਫੋਟੋ ਖਿੱਚੋ', label_age:'ਉਮਰ', label_gender:'ਲਿੰਗ', label_diet:'ਖੁਰਾਕ', label_height:'ਕੱਦ (CM)', label_weight:'ਭਾਰ (KG)', label_bp:'BP ਪੱਧਰ', label_sugar:'ਸ਼ੂਗਰ', label_thyroid:'ਥਾਇਰਾਇਡ', label_platelets:'ਪਲੇਟਲੈਟਸ', label_feverdays:'ਬੁਖਾਰ ਦੇ ਦਿਨ', label_pain:'ਸਰੀਰ ਦਾ ਦਰਦ', label_shiver:'ਕੰਬਣੀ', label_fp:'ਬੁਖਾਰ ਪੈਟਰਨ', label_travel:'ਹਾਲੀਆ ਯਾਤਰਾ', label_stomach:'ਪੇਟ ਦਰਦ', label_appetite:'ਭੁੱਖ', label_desc:'ਲੱਛਣ ਅਤੇ ਸਮੱਸਿਆਵਾਂ *', btn_run_analysis:'ਵਿਸ਼ਲੇਸ਼ਣ ਚਲਾਓ', nav_home:'ਹੋਮ', nav_videos:'ਵੀਡੀਓ', nav_consult:'ਸਲਾਹ', menu_report:'ਰਿਪੋਰਟ ਇਤਿਹਾਸ', menu_blood:'ਬਲੱਡ ਬੈਂਕ', menu_chat:'ਗੱਲਬਾਤ', contact_us:'ਸੰਪਰਕ ਕਰੋ', contact_text:'ਸਵਾਲ? ਕਾਲ ਕਰੋ।', call_now:'ਕਾਲ ਕਰੋ', about_app:'ਐਪ ਬਾਰੇ', about_text:'JeevPath AI ਰਿਪੋਰਟਾਂ ਦਾ ਵਿਸ਼ਲੇਸ਼ਣ ਕਰਦਾ ਹੈ।', about_sub:'ਭਾਰਤ ਲਈ।', label_id:'ID', btn_logout:'ਲੌਗ ਆਉਟ', opt_male: 'ਪੁਰਸ਼', opt_female: 'ਔਰਤ', opt_other: 'ਹੋਰ', opt_veg:'ਸ਼ਾਕਾਹਾਰੀ', opt_nonveg:'ਮਾਸਾਹਾਰੀ', opt_vegan:'ਵੀਗਨ', opt_pain_mild:'ਹਲਕਾ', opt_pain_moderate:'ਦਰਮਿਆਨਾ', opt_pain_severe:'ਗੰਭੀਰ', no:'ਨਹੀਂ', yes:'ਹਾਂ', opt_shiver_yes:'ਹਾਂ, ਤੇਜ਼ ਕੰਬਣੀ', opt_fp_cont:'ਲਗਾਤਾਰ', opt_fp_int:'ਰੁਕ-ਰੁਕ ਕੇ', opt_apt_normal:'ਆਮ', opt_apt_loss:'ਭੁੱਖ ਘੱਟ', opt_apt_weak:'ਬਹੁਤ ਕਮਜ਼ੋਰੀ', pl_location:'ਸਥਾਨ...', pl_type:'ਇੱਥੇ ਲਿਖੋ...', years:'ਸਾਲ', pl_height: 'ਜਿਵੇਂ 175', pl_weight: 'ਜਿਵੇਂ 70' },
+            'te': { dashboard_title:'డాష్‌బోర్డ్', welcome_user:'నమస్తే, {userName}', welcome_sub:'మీ AI హెల్త్ కంపానియన్ సిద్ధంగా ఉంది.', select_analysis:'విశ్లేషణను ఎంచుకోండి', tab_general:'సాధారణ', tab_dengue:'డెంగ్యూ', tab_malaria:'మలేరియా', tab_typhoid:'టైఫాయిడ్', upload_title:'అప్‌లోడ్', upload_hint:'ఫైల్ ఎంచుకోండి', camera_title:'కెమెరా', camera_hint:'ఫోటో తీయండి', label_age:'వయస్సు', label_gender:'లింగం', label_diet:'ఆహార ప్రాధాన్యత', label_height:'ఎత్తు (CM)', label_weight:'బరువు (KG)', label_bp:'BP స్థాయి', label_sugar:'ఫాస్టింగ్ షుగర్', label_thyroid:'థైరాయిడ్ (TSH)', label_platelets:'ప్లేట్‌లెట్స్', label_feverdays:'జ్వరం రోజులు', label_pain:'శరీర నొప్పి', label_shiver:'వణుకు', label_fp:'జ్వరం సరళి', label_travel:'ఇటీవలి ప్రయాణం', label_stomach:'కడుపు నొప్పి', label_appetite:'ఆకలి', label_desc:'లక్షణాలు & సమస్యలు *', btn_run_analysis:'విశ్లేషణ చేయండి', nav_home:'హోమ్', nav_videos:'వీడియోలు', nav_consult:'సలహా', menu_report:'రిపోర్ట్ హిస్టరీ', menu_blood:'బ్లడ్ బ్యాంక్', menu_chat:'మాతో చాట్ చేయండి', contact_us:'మమ్మల్ని సంప్రదించండి', contact_text:'ప్రశ్నలు ఉన్నాయా? కాల్ చేయండి.', call_now:'కాల్ చేయండి', about_app:'యాప్ గురించి', about_text:'JeevPath AI వైద్య నివేదికలను విశ్లేషిస్తుంది.', about_sub:'భారతదేశం కోసం రూపొందించబడింది.', label_id:'ID', btn_logout:'లాగ్ అవుట్', opt_male: 'పురుషుడు', opt_female: 'స్త్రీ', opt_other: 'ఇతర', opt_veg:'శాకాహారి', opt_nonveg:'మాంసాహారి', opt_vegan:'వీగన్', opt_pain_mild:'తేలికపాటి', opt_pain_moderate:'మధ్యస్త', opt_pain_severe:'తీవ్రమైన', no:'కాదు', yes:'అవును', opt_shiver_yes:'అవును, తీవ్రమైన', opt_fp_cont:'నిరంతర', opt_fp_int:'అప్పుడప్పుడు', opt_apt_normal:'సాధారణ', opt_apt_loss:'ఆకలి మందగించడం', opt_apt_weak:'తీవ్ర నీరసం', pl_location:'స్థలం...', pl_type:'ఇక్కడ టైప్ చేయండి...', years:'ఏళ్లు', pl_height: 'ఉదా. 175', pl_weight: 'ఉదా. 70' },
+            'ta': { dashboard_title:'டாஷ்போர்டு', welcome_user:'வணக்கம், {userName}', welcome_sub:'உங்கள் AI துணை தயார்.', select_analysis:'பகுப்பாய்வைத் தேர்வுசெய்யவும்', tab_general:'பொது', tab_dengue:'டெங்கு', tab_malaria:'மலேரியா', tab_typhoid:'டைபாய்டு', upload_title:'பதிவேற்று', upload_hint:'கோப்பைத் தேர்ந்தெடுக்கவும்', camera_title:'கேமரா', camera_hint:'படம் எடுக்கவும்', label_age:'வயது', label_gender:'பாலினம்', label_diet:'உணவு முறை', label_height:'உயரம் (CM)', label_weight:'எடை (KG)', label_bp:'இரத்த அழுத்தம்', label_sugar:'சர்க்கரை', label_thyroid:'தைராய்டு', label_platelets:'தட்டுக்கள்', label_feverdays:'காய்ச்சல் நாட்கள்', label_pain:'உடல் வலி', label_shiver:'நடுக்கம்', label_fp:'காய்ச்சல் முறை', label_travel:'சமீபத்திய பயணம்', label_stomach:'வயிற்று வலி', label_appetite:'பசி', label_desc:'அறிகுறிகள் & பிரச்சனைகள் *', btn_run_analysis:'பகுப்பாய்வு', nav_home:'முகப்பு', nav_videos:'வீடியோ', nav_consult:'ஆலோசனை', menu_report:'அறிக்கை வரலாறு', menu_blood:'ரத்த வங்கி', menu_chat:'அரட்டை', contact_us:'தொடர்பு', contact_text:'கேள்விகள் உள்ளதா? அழைக்கவும்.', call_now:'அழைக்கவும்', about_app:'செயலி பற்றி', about_text:'JeevPath AI மருத்துவ அறிக்கைகளை பகுப்பாய்வு செய்கிறது.', about_sub:'இந்தியாவிற்காக வடிவமைக்கப்பட்டது.', label_id:'ID', btn_logout:'வெளியேறு', opt_male: 'ஆண்', opt_female: 'பெண்', opt_other: 'மற்றவை', opt_veg:'சைவம்', opt_nonveg:'அசைவம்', opt_vegan:'வேகன்', opt_pain_mild:'லேசான', opt_pain_moderate:'மிதமான', opt_pain_severe:'கடுமையான', no:'இல்லை', yes:'ஆம்', opt_shiver_yes:'ஆம், கடுமையான', opt_fp_cont:'தொடர்ச்சியான', opt_fp_int:'விட்டு விட்டு', opt_apt_normal:'இயல்பு', opt_apt_loss:'பசி குறைவு', opt_apt_weak:'அதிக பலவீனம்', pl_location:'இடம்...', pl_type:'இங்கே தட்டச்சு செய்க...', years:'ஆண்டுகள்', pl_height: 'எ.கா 175', pl_weight: 'எ.கா 70' },
+            'ml': { dashboard_title:'ഡാഷ്ബോർഡ്', welcome_user:'നമസ്കാരം, {userName}', welcome_sub:'നിങ്ങളുടെ AI സുഹൃത്ത് തയ്യാറാണ്.', select_analysis:'വിശകലനം തിരഞ്ഞെടുക്കുക', tab_general:'പൊതു', tab_dengue:'ഡെംഗി', tab_malaria:'മലേറിയ', tab_typhoid:'ടൈഫോയ്ഡ്', upload_title:'അപ്‌ലോഡ്', upload_hint:'ഫയൽ തിരഞ്ഞെടുക്കുക', camera_title:'ക്യാമറ', camera_hint:'ഫോട്ടോ എടുക്കുക', label_age:'വയസ്സ്', label_gender:'ലിംഗം', label_diet:'ഭക്ഷണ രീതി', label_height:'ഉയരം (CM)', label_weight:'ഭാരം (KG)', label_bp:'ബിപി', label_sugar:'ഷുഗർ', label_thyroid:'തൈറോയ്ഡ്', label_platelets:'പ്ലേറ്റ്‌ലെറ്റ്', label_feverdays:'പനി ദിവസങ്ങൾ', label_pain:'ശരീരവേദന', label_shiver:'വിറയൽ', label_fp:'പനി രീതി', label_travel:'യാത്രകൾ', label_stomach:'വയറുവേദന', label_appetite:'വിശപ്പ്', label_desc:'ലക്ഷണങ്ങളും പ്രശ്നങ്ങളും *', btn_run_analysis:'വിശകലനം ചെയ്യുക', nav_home:'ഹോം', nav_videos:'വീഡിയോ', nav_consult:'കൺസൾട്ട്', menu_report:'റിപ്പോർട്ട് ചരിത്രം', menu_blood:'രക്ത ബാങ്ക്', menu_chat:'ചാറ്റ് ചെയ്യുക', contact_us:'ബന്ധപ്പെടുക', contact_text:'ചോദ്യങ്ങളുണ്ടോ? വിളിക്കുക.', call_now:'വിളിക്കുക', about_app:'ആപ്പിനെക്കുറിച്ച്', about_text:'JeevPath AI റിപ്പോർട്ടുകൾ വിശകലനം ചെയ്യുന്നു.', about_sub:'ഇന്ത്യയ്ക്കായി രൂപകൽപ്പന ചെയ്തത്.', label_id:'ID', btn_logout:'ലോഗൗട്ട്', opt_male: 'പുരുഷൻ', opt_female: 'സ്ത്രീ', opt_other: 'മറ്റുള്ളവ', opt_veg:'സസ്യാഹാരം', opt_nonveg:'മാംസാഹാരം', opt_vegan:'വീഗൻ', opt_pain_mild:'ലഘു', opt_pain_moderate:'ഇടത്തരം', opt_pain_severe:'കഠിനം', no:'അല്ല', yes:'അതെ', opt_shiver_yes:'അതെ, കഠിനമായ', opt_fp_cont:'തുടർച്ചയായ', opt_fp_int:'ഇടവിട്ടുള്ള', opt_apt_normal:'സാധാരണ', opt_apt_loss:'വിശപ്പില്ലായ്മ', opt_apt_weak:'കഠിനമായ ക്ഷീണം', pl_location:'സ്ഥലം...', pl_type:'ഇവിടെ ടൈപ്പ് ചെയ്യുക...', years:'വയസ്സ്', pl_height: 'ഉദാ. 175', pl_weight: 'ഉദാ. 70' },
+            'kn': { dashboard_title:'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', welcome_user:'ನಮಸ್ಕಾರ, {userName}', welcome_sub:'ನಿಮ್ಮ AI ಆರೋಗ್ಯ ಮಿತ್ರ ಸಿದ್ಧವಾಗಿದೆ.', select_analysis:'ವಿಶ್ಲೇಷಣೆ ಆಯ್ಕೆಮಾಡಿ', tab_general:'ಸಾಮಾನ್ಯ', tab_dengue:'ಡೆಂಗ್ಯೂ', tab_malaria:'ಮಲೇರಿಯಾ', tab_typhoid:'ಟೈಫಾಯ್ಡ್', upload_title:'ಅಪ್‌ಲೋಡ್', upload_hint:'ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ', camera_title:'ಕ್ಯಾಮೆರಾ', camera_hint:'ಫೋಟೋ ತೆಗೆಯಿರಿ', label_age:'ವಯಸ್ಸು', label_gender:'ಲಿಂಗ', label_diet:'ಆಹಾರ', label_height:'ಎತ್ತರ (CM)', label_weight:'ತೂಕ (KG)', label_bp:'ಬಿಪಿ', label_sugar:'ಸಕ್ಕರೆ', label_thyroid:'ಥೈರಾಯ್ಡ್', label_platelets:'ಪ್ಲೇಟ್ಲೆಟ್', label_feverdays:'ಜ್ವರದ ದಿನಗಳು', label_pain:'ಮೈಕೈ ನೋವು', label_shiver:'ನಡುಕ', label_fp:'ಜ್ವರದ ಮಾದರಿ', label_travel:'ಇತ್ತೀಚಿನ ಪ್ರಯಾಣ', label_stomach:'ಹೊಟ್ಟೆ ನೋವು', label_appetite:'ಹಸಿವು', label_desc:'ಲಕ್ಷಣಗಳು & ಸಮಸ್ಯೆಗಳು *', btn_run_analysis:'ವಿಶ್ಲೇಷಣೆ ನಡೆಸಿ', nav_home:'ಮುಖಪುಟ', nav_videos:'ವೀಡಿಯೊ', nav_consult:'ಸಲಹೆ', menu_report:'ವರದಿ ಇತಿಹಾಸ', menu_blood:'ರಕ್ತ ನಿಧಿ', menu_chat:'ಚಾಟ್ ಮಾಡಿ', contact_us:'ಸಂಪರ್ಕಿಸಿ', contact_text:'ಪ್ರಶ್ನೆಗಳಿವೆಯೇ? ಕರೆ ಮಾಡಿ.', call_now:'ಕರೆ ಮಾಡಿ', about_app:'ಆಪ್ ಬಗ್ಗೆ', about_text:'JeevPath AI ವರದಿಗಳನ್ನು ವಿಶ್ಲೇಷಿಸುತ್ತದೆ.', about_sub:'ಭಾರತಕ್ಕಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.', label_id:'ID', btn_logout:'ಹೊರಗೆ', opt_male: 'ಪುರುಷ', opt_female: 'ಸ್ತ್ರೀ', opt_other: 'ಇತರೆ', opt_veg:'ಸಸ್ಯಾಹಾರಿ', opt_nonveg:'ಮಾಂಸಾಹಾರಿ', opt_vegan:'ವೇಗನ್', opt_pain_mild:'ಕಡಿಮೆ', opt_pain_moderate:'ಮಧ್ಯಮ', opt_pain_severe:'ತೀವ್ರ', no:'ಇಲ್ಲ', yes:'ಹೌದು', opt_shiver_yes:'ಹೌದು, ತೀವ್ರ', opt_fp_cont:'ನಿರಂತರ', opt_fp_int:'ಬಿಟ್ಟು ಬಿಟ್ಟು', opt_apt_normal:'ಸಾಮಾನ್ಯ', opt_apt_loss:'ಹಸಿವಿಲ್ಲದಿರುವಿಕೆ', opt_apt_weak:'ತೀವ್ರ ಬಲಹೀನತೆ', pl_location:'ಸ್ಥಳ...', pl_type:'ಇಲ್ಲಿ ಬರೆಯಿರಿ...', years:'ವರ್ಷ', pl_height: 'ಉದಾ. 175', pl_weight: 'ಉದಾ. 70' },
+            'ur': { dashboard_title:'ڈیش بورڈ', welcome_user:'آداب، {userName}', welcome_sub:'آپ کا AI ساتھی تیار ہے۔', select_analysis:'تجزیہ منتخب کریں', tab_general:'عام', tab_dengue:'ڈینگی', tab_malaria:'ملیریا', tab_typhoid:'ٹائیفائیڈ', upload_title:'اپ لوڈ', upload_hint:'فائل منتخب کریں', camera_title:'کیمرہ', camera_hint:'تصویر لیں', label_age:'عمر', label_gender:'جنس', label_diet:'غذائی ترجیح', label_height:'قد (CM)', label_weight:'وزن (KG)', label_bp:'بی پی لیول', label_sugar:'شوگر', label_thyroid:'تھائرائیڈ', label_platelets:'پلیٹلیٹس', label_feverdays:'بخار کے دن', label_pain:'جسم کا درد', label_shiver:'کپکپی', label_fp:'بخار کا پیٹرن', label_travel:'حالیہ سفر', label_stomach:'پیٹ درد', label_appetite:'بھوک', label_desc:'علامات اور مسائل *', btn_run_analysis:'تجزیہ کریں', nav_home:'ہوم', nav_videos:'ویڈیو', nav_consult:'مشورہ', menu_report:'رپورٹ ہسٹری', menu_blood:'بلڈ بینک', menu_chat:'ہم سے بات کریں', contact_us:'رابطہ کریں', contact_text:'سوالات ہیں؟ ہیلپ لائن پر کال کریں۔', call_now:'کال کریں', about_app:'ایپ کے بارے میں', about_text:'JeevPath AI رپورٹس کا تجزیہ کرتا ہے۔', about_sub:'بھارت کے لیے ڈیزائن کیا گیا۔', label_id:'ID', btn_logout:'لاگ آؤٹ', opt_male: 'مرد', opt_female: 'عورت', opt_other: 'دیگر', opt_veg:'سبزی خور', opt_nonveg:'گوشت خور', opt_vegan:'ویگن', opt_pain_mild:'ہلکا', opt_pain_moderate:'درمیانہ', opt_pain_severe:'شدید درد', no:'نہیں', yes:'ہاں', opt_shiver_yes:'ہاں، شدید', opt_fp_cont:'مسلسل', opt_fp_int:'وقفے وقفے سے', opt_apt_normal:'نارمل', opt_apt_loss:'بھوک کی کمی', opt_apt_weak:'انتہائی کمزوری', pl_location:'مقام...', pl_type:'یہاں لکھیں...', years:'سال', pl_height: 'جیسے 175', pl_weight: 'جیسے 70' },
+            'or': { dashboard_title:'ଡ୍ୟାସବୋର୍ଡ', welcome_user:'ନମସ୍କାର, {userName}', welcome_sub:'ଆପଣଙ୍କ AI ସାଥୀ ପ୍ରସ୍ତୁତ।', select_analysis:'ବିଶ୍ଲେଷଣ ବାଛନ୍ତୁ', tab_general:'ସାଧାରଣ', tab_dengue:'ଡେଙ୍ଗୁ', tab_malaria:'ମ୍ୟାଲେରିଆ', tab_typhoid:'ଟାଇଫଏଡ', upload_title:'ଅପଲୋଡ୍', upload_hint:'ଫାଇଲ୍ ବାଛନ୍ତୁ', camera_title:'କ୍ୟାମେରା', camera_hint:'ଫଟୋ ନିଅନ୍ତୁ', label_age:'ବୟସ', label_gender:'ଲିଙ୍ଗ', label_diet:'ଖାଦ୍ୟ ପସନ୍ଦ', label_height:'ଉଚ୍ଚତା (CM)', label_weight:'ଓଜନ (KG)', label_bp:'ରକ୍ତଚାପ', label_sugar:'ଶର୍କରା', label_thyroid:'ଥାଇରଏଡ', label_platelets:'ପ୍ଲେଟଲେଟ୍', label_feverdays:'ଜ୍ଵର ଦିନ', label_pain:'ଶରୀର ଯନ୍ତ୍ରଣା', label_shiver:'ଥର', label_fp:'ଜ୍ୱର ପ୍ୟାଟର୍ଣ୍ଣ', label_travel:'ସମ୍ପ୍ରତି ଯାତ୍ରା', label_stomach:'ପେଟ ବ୍ୟଥା', label_appetite:'ଭୋକ', label_desc:'ଲକ୍ଷଣ ଓ ସମସ୍ୟା *', btn_run_analysis:'ବିଶ୍ଲେଷଣ କରନ୍ତୁ', nav_home:'ମୂଳ', nav_videos:'ଭିଡିଓ', nav_consult:'ପରାମର୍ଶ', menu_report:'ରିପୋର୍ଟ ଇତିହାସ', menu_blood:'ରକ୍ତ ବ୍ୟାଙ୍କ', menu_chat:'ଚାଟ୍ କରନ୍ତୁ', contact_us:'ଯୋଗାଯୋଗ କରନ୍ତୁ', contact_text:'ପ୍ରଶ୍ନ ଅଛି? କଲ୍ କରନ୍ତୁ।', call_now:'କଲ୍ କରନ୍ତୁ', about_app:'ଆପ୍ ବିଷୟରେ', about_text:'JeevPath AI ବିଶ୍ଲେଷଣ କରେ।', about_sub:'ଭାରତ ପାଇଁ ଡିଜାଇନ୍।', label_id:'ID', btn_logout:'ଲଗ୍ ଆଉଟ୍', opt_male: 'ପୁରୁଷ', opt_female: 'ମହିଳା', opt_other: 'ଅନ୍ୟ', opt_veg:'ଶାକାହାରୀ', opt_nonveg:'ଆମିଷ', opt_vegan:'ଭେଗାନ୍', opt_pain_mild:'ହାଲୁକା', opt_pain_moderate:'ମଧ୍ୟମ', opt_pain_severe:'ତୀବ୍ର', no:'ନା', yes:'ହଁ', opt_shiver_yes:'ହଁ, ତୀବ୍ର', opt_fp_cont:'ଲଗାତାର', opt_fp_int:'ରହି ରହି', opt_apt_normal:'ସାଧାରଣ', opt_apt_loss:'ଭୋକ କମିବା', opt_apt_weak:'ଅତ୍ୟଧିକ ଦୁର୍ବଳତା', pl_location:'ସ୍ଥାନ...', pl_type:'ଏଠାରେ ଲେଖନ୍ତୁ...', years:'ବର୍ଷ', pl_height: 'ଯଥା 175', pl_weight: 'ଯଥା 70' },
+            'as': { dashboard_title:'ডেশব’ৰ্ড', welcome_user:'নমস্কাৰ, {userName}', welcome_sub:'আপোনাৰ AI সংগী সাজু।', select_analysis:'বিশ্লেষণ বাছনি', tab_general:'সাধাৰণ', tab_dengue:'ডেংগু', tab_malaria:' মেলেৰিয়া', tab_typhoid:'টাইফয়েড', upload_title:'আপলোড', upload_hint:'ফাইল বাছনি', camera_title:'কেমেৰা', camera_hint:'ফটো তোলক', label_age:'বয়স', label_gender:'লিংগ', label_diet:'খাদ্য', label_height:'উচ্চতা (CM)', label_weight:'ওজন (KG)', label_bp:'চাপ', label_sugar:'চেনি', label_thyroid:'থাইৰয়ড', label_platelets:'প্লেটলেট', label_feverdays:'জ্বৰৰ দিন', label_pain:'শৰীৰৰ বিষ', label_shiver:'কঁপনি', label_fp:'জ্বৰৰ ধৰণ', label_travel:'শেহতীয়া ভ্ৰমণ', label_stomach:'পেটৰ বিষ', label_appetite:'ভোক', label_desc:'লক্ষণ আৰু সমস্যা *', btn_run_analysis:'বিশ্লেষণ', nav_home:'গৃহ', nav_videos:'ভিডিঅ’', nav_consult:'পৰামৰ্শ', menu_report:'ৰিপৰ্ট ইতিহাস', menu_blood:'ব্লাড বেংক', menu_chat:'কথা পাৰক', contact_us:'যোগাযোগ', contact_text:'প্ৰশ্ন আছেনে? কল কৰক।', call_now:'কল কৰক', about_app:'এপৰ বিষয়ে', about_text:'JeevPath AI এ ৰিপৰ্ট বিশ্লেষণ কৰে।', about_sub:'ভাৰতৰ বাবে।', label_id:'ID', btn_logout:'লগ আউট', opt_male: 'পুৰুষ', opt_female: 'মহিলা', opt_other: 'অন্য', opt_veg:'নিৰামিষ', opt_nonveg:'আমিষ', opt_vegan:'ভেগান', opt_pain_mild:'কম', opt_pain_moderate:'মধ্যম', opt_pain_severe:'বেছি', no:'নহয়', yes:'হয়', opt_shiver_yes:'হয়, বেছি কঁপনি', opt_fp_cont:'সদায়', opt_fp_int:'মাজে মাজে', opt_apt_normal:'স্বাভাৱিক', opt_apt_loss:'কম ভোক', opt_apt_weak:'অতি দুৰ্বলতা', pl_location:'স্থান...', pl_type:'ইয়াত লিখক...', years:'বছৰ', pl_height: 'যেনে 175', pl_weight: 'যেনে 70' },
+            'mni': { dashboard_title:'দেশবোর্দ', welcome_user:'খুরুমজরি, {userName}', welcome_sub:'নহাক্কী AI মরুপ শেম শারে।', select_analysis:'এনালিসিস খনবীয়ু', tab_general:'অপুনবা', tab_dengue:'দেঙ্গু', tab_malaria:'মেলেলিয়া', tab_typhoid:'তাইফোদ', upload_title:'হাপখৎপা', upload_hint:'ফাইল খনবীয়ু', camera_title:'কেমেরা', camera_hint:'ফোতো লৌবীয়ু', label_age:'চহি', label_gender:'লিঙ্গ', label_diet:'চাক', label_height:'অৱাংবা (CM)', label_weight:'অরুমবা (KG)', label_bp:'BP', label_sugar:'চিনি', label_thyroid:'থাইরোদ', label_platelets:'প্লেটলেটস', label_feverdays:'লাইনা নুমিৎ', label_pain:'হকচাং নাবা', label_shiver:'খোকপা', label_fp:'লাইনা মওং', label_travel:'চৎলুবা', label_stomach:'পুক নাবা', label_appetite:'লমহনবা', label_desc:'মওং মতৌ & সমস্যা *', btn_run_analysis:'য়েংবা', nav_home:'য়ুম', nav_videos:'ভিদিও', nav_consult:'পাউ', menu_report:'রিপোক পুৱারী', menu_blood:'ই', menu_chat:'ৱারি', contact_us:'পাউ ফাওনবা', contact_text:'ৱাহং লৈব্রা? কোল তৌবিয়ু।', call_now:'কোল তৌবিয়ু', about_app:'মরমদা', about_text:'JeevPath AI রিপোর্ত নৈনৈ।', about_sub:'ইন্ দিয়াদা।', label_id:'ID', btn_logout:'থোকপা', opt_male: 'নিপা', opt_female: 'নুপী', opt_other: 'অতোপ্পা', opt_veg:'মনা মসিং', opt_nonveg:'শেন', opt_vegan:'ভেগন', opt_pain_mild:'ইশপ শপ্পা', opt_pain_moderate:'ময়াই ওইবা', opt_pain_severe:'কনবা', no:'নত্তে', yes:'হোয়', opt_shiver_yes:'হোয়, কনবা', opt_fp_cont:'লেপ্তনা', opt_fp_int:'করিম করিম', opt_apt_normal:'পংচৎ', opt_apt_loss:'লমহনবা হন্থবা', opt_apt_weak:'সোনবা', pl_location:'মফম...', pl_type:'মসিদা ইবিয়ু...', years:'চহি', pl_height: 'খুদম. 175', pl_weight: 'খুদম. 70' },
+            'ne': { dashboard_title:'ड्यासबोर्ड', welcome_user:'नमस्ते, {userName}', welcome_sub:'तपाईंको AI साथी तयार छ।', select_analysis:'विश्लेषण छान्नुहोस्', tab_general:'सामान्य', tab_dengue:'डेंगु', tab_malaria:'मलेरिया', tab_typhoid:'टाइफाइड', upload_title:'अपलोड', upload_hint:'फाइल छान्नुहोस्', camera_title:'क्यामेरा', camera_hint:'फोटो लिनुहोस्', label_age:'उमेर', label_gender:'लिंग', label_diet:'खाना प्राथमिकता', label_height:'उचाई (CM)', label_weight:'तौल (KG)', label_bp:'BP', label_sugar:'चिनी', label_thyroid:'थाइराइड', label_platelets:'प्लेटलेट्स', label_feverdays:'ज्वरोका दिन', label_pain:'जिउ दुख्नु', label_shiver:'कामनु', label_fp:'ज्वरो ढाँचा', label_travel:'यात्रा', label_stomach:'पेट दुख्नु', label_appetite:'भोक', label_desc:'लक्षण र समस्या *', btn_run_analysis:'विश्लेषण गर्नुहोस्', nav_home:'घर', nav_videos:'भिडियो', nav_consult:'सल्लाह', menu_report:'रिपोर्ट इतिहास', menu_blood:'रगत बैंक', menu_chat:'कुराकानी', contact_us:'सम्पर्क', contact_text:'प्रश्न छन्? फोन गर्नुहोस्।', call_now:'कल गर्नुहोस्', about_app:'एप बारे', about_text:'JeevPath AI ले विश्लेषण गर्छ।', about_sub:'भारतको लागि।', label_id:'ID', btn_logout:'लग आउट', opt_male: 'पुरुष', opt_female: 'महिला', opt_other: 'अन्य', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'भेगन', opt_pain_mild:'हल्का', opt_pain_moderate:'मध्यम', opt_pain_severe:'कडा दुखाइ', no:'होइन', yes:'हो', opt_shiver_yes:'हो, धेरै कामनु', opt_fp_cont:'निरन्तर', opt_fp_int:'पटक पटक', opt_apt_normal:'सामान्य', opt_apt_loss:'भोक कम', opt_apt_weak:'धेरै कमजोरी', pl_location:'ठाउँ...', pl_type:'यहाँ लेख्नुहोस्...', years:'वर्ष', pl_height: 'जस्तै 175', pl_weight: 'जस्तै 70' },
+            'sa': { dashboard_title:'उपकरणपटलम्', welcome_user:'नमस्ते, {userName}', welcome_sub:'तव AI मित्रं सज्जः अस्ति।', select_analysis:'चिनोतु', tab_general:'सामान्य', tab_dengue:'डेन्गु', tab_malaria:'मलेरिया', tab_typhoid:'आन्त्रज्वरः', upload_title:'अपलोड', upload_hint:'सञ्चिकां चिनोतु', camera_title:'चित्रग्राहिणी', camera_hint:'चित्रं स्वीकरोतु', label_age:'आयुः', label_gender:'लिङ्ग', label_diet:'आहार', label_height:'औन्नत्य (CM)', label_weight:'भारः (KG)', label_bp:'रक्तचाप', label_sugar:'शर्करा', label_thyroid:'गलग्रन्थि', label_platelets:'पट्टिका', label_feverdays:'ज्वरदिनानि', label_pain:'देहवेदना', label_shiver:'वेपथु', label_fp:'ज्वरस्वरूप', label_travel:'सद्यः यात्रा', label_stomach:'उदरवेदना', label_appetite:'बुभुक्षा', label_desc:'लक्षणानि समस्या च *', btn_run_analysis:'विश्लेषणम्', nav_home:'गृहम्', nav_videos:'चलचित्र', nav_consult:'परामर्श', menu_report:'प्रतिवेदन', menu_blood:'रक्तकोश', menu_chat:'संलाप', contact_us:'संपर्क', contact_text:'प्रश्नाः सन्ति वा? आह्वयतु।', call_now:'आह्वयतु', about_app:'अनुप्रयोग', about_text:'JeevPath AI विश्लेषणं करोति।', about_sub:'भारते कल्पितः।', label_id:'परिचय', btn_logout:'निर्गमनम्', opt_male: 'पुमान्', opt_female: 'स्त्री', opt_other: 'अन्य', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'केवलशाक', opt_pain_mild:'मन्द', opt_pain_moderate:'मध्यम', opt_pain_severe:'तीव्र', no:'न', yes:'आम्', opt_shiver_yes:'आम्, तीव्र', opt_fp_cont:'निरन्तर', opt_fp_int:'विराम', opt_apt_normal:'सामान्य', opt_apt_loss:'न्यून', opt_apt_weak:'दुर्बलता', pl_location:'स्थान...', pl_type:'अत्र लिखतु...', years:'वर्षाणि', pl_height: 'उदा. 175', pl_weight: 'उदा. 70' },
+            'sd': { dashboard_title:'ڊيش بورڊ', welcome_user:'نمستي, {userName}', welcome_sub:'توهان جو AI ساٿي تيار آهي.', select_analysis:'تجزیو چونڊيو', tab_general:'عام', tab_dengue:'ڊينگي', tab_malaria:'مليريا', tab_typhoid:'ٽائيفائيڊ', upload_title:'اپلوڊ', upload_hint:'فائل چونڊيو', camera_title:'ڪيمرا', camera_hint:'فوٽو ڪڍو', label_age:'عمر', label_gender:'جنس', label_diet:'کاڌي جي ترجيح', label_height:'قد (CM)', label_weight:'وزن (KG)', label_bp:'بي پي', label_sugar:'شوگر', label_thyroid:'ٿائرايڊ', label_platelets:'پليٽليٽس', label_feverdays:'بخار جا ڏينهن', label_pain:'جس ۾ سور', label_shiver:'ڪنبڻ', label_fp:'بخار جو نمونو', label_travel:'تازو سفر', label_stomach:'پيٽ سور', label_appetite:'بک', label_desc:'نشانيون ۽ مسئلا *', btn_run_analysis:'تجزيو هلايو', nav_home:'گھر', nav_videos:'وڊيو', nav_consult:'صلاح', menu_report:'رپورٽ هسٽري', menu_blood:'بلڊ بئنڪ', menu_chat:'اسان سان ڳالهايو', contact_us:'رابطو ڪريو', contact_text:'سوال آهن؟ ڪال ڪريو.', call_now:'ڪال ڪريو', about_app:'ايپ بابت', about_text:'JeevPath AI رپورٽن جو تجزيو ڪري ٿو.', about_sub:'ڀارت لاء ٺهيل.', label_id:'ID', btn_logout:'لاگ آئوٽ', opt_male: 'مرد', opt_female: 'عورت', opt_other: 'ٻيو', opt_veg:'سبزي', opt_nonveg:'گوشت', opt_vegan:'ويگن', opt_pain_mild:'هلڪو', opt_pain_moderate:'وچولي', opt_pain_severe:'تيز', no:'نه', yes:'ها', opt_shiver_yes:'ها, تيز', opt_fp_cont:'مسلسل', opt_fp_int:'وقتي', opt_apt_normal:'عام', opt_apt_loss:'گھٽ بک', opt_apt_weak:'تمام گهڻي ڪمزوري', pl_location:'جڳهه...', pl_type:'هتي لکو...', years:'سال', pl_height: 'جيئن 175', pl_weight: 'جيئن 70' },
+            'doi': { dashboard_title:'डैशबोर्ड', welcome_user:'नमस्ते, {userName}', welcome_sub:'तैयार ऐ तुंदा AI साथी।', select_analysis:'चुनो', tab_general:'आम', tab_dengue:'डेंगी', tab_malaria:'मलेरिया', tab_typhoid:'टाइफाइड', upload_title:'चढ़ाओ', upload_hint:'फाइल चुनो', camera_title:'कैमरा', camera_hint:'फोटो लैओ', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाह्ना-पीना', label_height:'कद (CM)', label_weight:'भार (KG)', label_bp:'बीपी', label_sugar:'शुगर', label_thyroid:'थाइराइड', label_platelets:'प्लेटलेट्स', label_feverdays:'बुखार दे दिन', label_pain:'शरीर दी पीड़', label_shiver:'कंबनी', label_fp:'तरीका', label_travel:'हाल दी यात्रा', label_stomach:'टिड्ड पीड़', label_appetite:'भुक्ख', label_desc:'लच्छन ते परेशानियां *', btn_run_analysis:'विश्लेषण', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'सलाह', menu_report:'रपोट इतिहास', menu_blood:'खून बैंक', menu_chat:'गल्ल करो', contact_us:'संपर्क', contact_text:'स्वाल न? फोन करो।', call_now:'फोन करो', about_app:'ऐपक बारे च', about_text:'JeevPath AI जांच करदा ऐ।', about_sub:'भारत दे लेई।', label_id:'ID', btn_logout:'बाहर निकलो', opt_male: ' मर्द', opt_female: 'जनानी', opt_other: 'हो र', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'वेगन', opt_pain_mild:'थोड़ी', opt_pain_moderate:'बिच्चली', opt_pain_severe:'बाली पीड़', no:'नेईं', yes:'हां', opt_shiver_yes:'हां, बाली', opt_fp_cont:'लगातार', opt_fp_int:'रुकी-रुकी', opt_apt_normal:'मामूली', opt_apt_loss:'घट्ट भुक्ख', opt_apt_weak:'बाली कमजोरी', pl_location:'थ्हौर...', pl_type:'इत्थे लिखो...', years:'बरें', pl_height: 'जैसे 175', pl_weight: 'जैसे 70' },
+            'kok': { dashboard_title:'डॅशबोर्ड', welcome_user:'देव बरो दिस दिव, {userName}', welcome_sub:'तुमचो AI सांगाती तयार आसा.', select_analysis:'वेंचून काड', tab_general:'सामान्य', tab_dengue:'डेंग्यू', tab_malaria:'मलेरिया', tab_typhoid:'टायफॉइड', upload_title:'चडय', upload_hint:'फायल वेंच', camera_title:'कॅमेरा', camera_hint:'फोटू काड', label_age:'पिराय', label_gender:'लिंग', label_diet:'जेवण', label_height:'उंचाय (CM)', label_weight:'वजन (KG)', label_bp:'बीपी', label_sugar:'साखर', label_thyroid:'थायरॉईड', label_platelets:'प्लेटलेट्स', label_feverdays:'ज्वराचे दीस', label_pain:'कुडीचें दुख', label_shiver:'कडकड', label_fp:'नमुनो', label_travel:'आयची भोंवडी', label_stomach:'पोटदुखी', label_appetite:'भूक', label_desc:'लक्षणां *', btn_run_analysis:'विश्लेषण', nav_home:'घर', nav_videos:'व्हिडिओ', nav_consult:'सल्लो', menu_report:'अहवाल', menu_blood:'रगत पेढी', menu_chat:'गजाली', contact_us:'संपर्क', contact_text:'प्रस्न आसात? फोन कर.', call_now:'फोन कर', about_app:'ॲपा विशीं', about_text:'JeevPath AI तपासणी करता.', about_sub:'भारता खातीर.', label_id:'ID', btn_logout:'भायर सर', opt_male: 'पुरूष', opt_female: 'बाय', opt_other: 'इतर', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'व्हेगन', opt_pain_mild:'थोडें', opt_pain_moderate:'मदम', opt_pain_severe:'खर', no:'ना', yes:'हय', opt_shiver_yes:'हय, खर', opt_fp_cont:'सतत', opt_fp_int:'तुटक', opt_apt_normal:'सदांचें', opt_apt_loss:'भूक कमी', opt_apt_weak:'खूब अशक्तपणा', pl_location:'जागो...', pl_type:'हांगा बरय...', years:'वर्सां', pl_height: 'देखीक 175', pl_weight: 'देखीक 70' },
+            'brx': { dashboard_title:'डेशबर्ड', welcome_user:'खुलुमबाय, {userName}', welcome_sub:'तियार दं AI लोगोजोरा।', select_analysis:'बिजिरनाय सायख', tab_general:'सरासनस्रा', tab_dengue:'देंगु', tab_malaria:'मेलेरिआ', tab_typhoid:'टाइफयेद', upload_title:'आपलद', upload_hint:'फाइल', camera_title:'केमेरा', camera_hint:'फथ', label_age:'बैस', label_gender:'लिन्गो', label_diet:'आदार', label_height:'गोजौ (CM)', label_weight:'लिरथाइ (KG)', label_bp:'BP', label_sugar:'सुलि', label_thyroid:'थाइरयद', label_platelets:'प्लेटलेट्स', label_feverdays:'ज्वर सान', label_pain:'मोदोम सानाय', label_shiver:'मावनाय', label_fp:'रोखोम', label_travel:'बेरायनाय', label_stomach:'उदै सानाय', label_appetite:'खिदा', label_desc:'सिनायथि *', btn_run_analysis:'बिजिरनाय', nav_home:'न', nav_videos:'भिडिअ', nav_consult:'सकनाय', menu_report:'रिफर्त जारिमिन', menu_blood:'थै बेंक', menu_chat:'रायज्लाय', contact_us:'जानबुं', contact_text:'सोंथि दं? कॉल खालाम।', call_now:'कॉल', about_app:'सोमोन्दै', about_text:'JeevPath AI.', about_sub:'भारत।', label_id:'ID', btn_logout:'अंखा', opt_male: 'होवा', opt_female: 'हिनजाव', opt_other: 'गुबुन', opt_veg:'मायगं-तायगं', opt_nonveg:'बेदर', opt_vegan:'भेगान', opt_pain_mild:'इसि', opt_pain_moderate:'गेजेर', opt_pain_severe:'जोबोद', no:'नोङा', yes:'नंगौ', opt_shiver_yes:'नंगौ, जोबोद', opt_fp_cont:'अरायबो', opt_fp_int:'दोसे दोसे', opt_apt_normal:'सरासनस्रा', opt_apt_loss:'खोम खिदा', opt_apt_weak:'बियो', pl_location:'जायगा...', pl_type:'लिर...', years:'बोसोर', pl_height: 'जेरै 175', pl_weight: 'जेरै 70' },
+            'mai': { dashboard_title:'डैशबोर्ड', welcome_user:'प्रणाम, {userName}', welcome_sub:'तैयार अछि।', select_analysis:'चुनू', tab_general:'सामान्य', tab_dengue:'डेंगू', tab_malaria:'मलेरिया', tab_typhoid:'टाइफाइड', upload_title:'अपलोड', upload_hint:'फाइल', camera_title:'कैमरा', camera_hint:'फोटो', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाए', label_height:'उँचाइ (CM)', label_weight:'वजन (KG)', label_bp:'बीपी', label_sugar:'चीनी', label_thyroid:'थाइराइड', label_platelets:'प्लेटलेट्स', label_feverdays:'दिन', label_pain:'दर्द', label_shiver:'कामनु', label_fp:'तरीका', label_travel:'यात्रा', label_stomach:'पेट दर्द', label_appetite:'भूख', label_desc:'लक्षण *', btn_run_analysis:'विश्लेषण', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'परामर्श', menu_report:'रपट', menu_blood:'रक्त', menu_chat:'गप्प', contact_us:'संपर्क', contact_text:'कॉल करू।', call_now:'कॉल', about_app:'विषय', about_text:'JeevPath AI.', about_sub:'भारत।', label_id:'ID', btn_logout:'बाहर', opt_male: 'पुरूष', opt_female: 'स्त्री', opt_other: 'आन', opt_veg:'शाकाहारी', opt_nonveg:'मांसाहारी', opt_vegan:'वेगन', opt_pain_mild:'कम', opt_pain_moderate:'मध्यम', opt_pain_severe:'बड्ड', no:'नहि', yes:'हँ', opt_shiver_yes:'हँ, बड्ड', opt_fp_cont:'लगातार', opt_fp_int:'रुक-रुक', opt_apt_normal:'सामान्य', opt_apt_loss:'कम', opt_apt_weak:'कमजोरी', pl_location:'स्थान...', pl_type:'लिखू...', years:'वर्ष', pl_height: 'जेना 175', pl_weight: 'जेना 70' },
+            'sat': { dashboard_title:'ᱰᱮᱥᱵᱚᱨᱰ', welcome_user:'ᱡᱚᱦᱟᱨ, {userName}', welcome_sub:'ᱟᱢᱟᱜ ᱦᱚᱲᱢᱚ ᱥᱟᱶᱛᱮ ᱛᱮᱭᱟᱨ ᱢᱮᱱᱟᱭᱟ.', select_analysis:'ᱵᱟᱪᱷᱟᱣ ᱢᱮ', tab_general:'ᱥᱟᱫᱷᱟᱨᱚᱱ', tab_dengue:'ᱰᱮᱝᱜᱩ', tab_malaria:'ᱢᱮᱞᱮᱨᱤᱭᱟ', tab_typhoid:'ᱴᱟᱭᱯᱷᱚᱭᱮᱰ', upload_title:'ᱟᱯᱞᱚᱰ', upload_hint:'ᱯᱷᱟᱭᱤᱞ ᱵᱟᱪᱷᱟᱣ', camera_title:'ᱠᱮᱢᱨᱟ', camera_hint:'ᱪᱤᱛᱟᱹᱨ ᱤᱫᱤ', label_age:'ᱵᱚᱭᱚᱥ', label_gender:'ᱡᱟᱱᱟᱝ', label_diet:'ᱡᱚᱢ ᱧᱩ', label_height:'ᱩᱥᱩᱞ (CM)', label_weight:'ᱦᱟᱢᱟᱞ (KG)', label_bp:'ᱵᱤᱯᱤ', label_sugar:'ᱪᱤᱱᱤ', label_thyroid:'ᱛᱷᱟᱭᱨᱚᱭᱮᱰ', label_platelets:'ᱯᱞᱮᱴᱞᱮᱴ', label_feverdays:'ᱨᱩᱣᱟᱹ ᱢᱟᱦᱟᱸ', label_pain:'ᱦᱚᱲᱢᱚ ᱦᱟᱹᱥᱩ', label_shiver:'ᱛᱚᱨᱛᱚᱨᱟᱣ', label_fp:'ᱫᱷᱚᱨᱚᱱ', label_travel:'ᱫᱟᱬᱟ', label_stomach:'ᱞᱟᱡ ᱦᱟᱹᱥᱩ', label_appetite:'ᱨᱮᱸᱜᱮᱡ', label_desc:'ᱪᱤᱱᱦᱟᱹ & ᱮᱴᱠᱮᱴᱚᱬᱮ *', btn_run_analysis:'ᱡᱟᱸᱪ', nav_home:'ᱚᱲᱟᱜ', nav_videos:'ᱵᱤᱰᱤᱭᱳ', nav_consult:'ᱥᱚᱞᱦᱟ', menu_report:'ᱨᱤᱯᱚᱴ', menu_blood:'ᱢᱟᱭᱟᱝ ᱵᱮᱸᱠ', menu_chat:'ᱜᱟᱞᱢᱟᱨᱟᱣ', contact_us:'ᱥᱟᱹᱜᱟᱹᱭ', contact_text:'ᱠᱩᱠᱞᱤ? ᱠᱚᱞ ᱢᱮ.', call_now:'ᱠᱚᱞ ᱢᱮ', about_app:'ᱵᱟᱵᱚᱛ', about_text:'JeevPath AI.', about_sub:'ᱥᱤᱧᱚᱛ.', label_id:'ID', btn_logout:'ᱚᱰᱚᱠ', opt_male: 'ᱠᱚᱲᱟ', opt_female: 'ᱠᱩᱲᱤ', opt_other: 'ᱮᱴᱟᱜ', opt_veg:'ᱟᱲᱟᱜ ᱥᱟᱠᱟᱢ', opt_nonveg:'ᱡᱤᱞ', opt_vegan:'ᱵᱷᱮᱜᱟᱱ', opt_pain_mild:'ᱱᱟᱥᱮ', opt_pain_moderate:'ᱛᱟᱞᱟ', opt_pain_severe:'ᱟᱹᱰᱤ ᱡᱳᱨ', no:'ᱵᱟᱝ', yes:'ᱦᱮᱸ', opt_shiver_yes:'ᱦᱮᱸ, ᱟᱹᱰᱤ', opt_fp_cont:'ᱞᱮᱛᱟᱲ', opt_fp_int:'ᱛᱟᱞᱟ ᱨᱮ', opt_apt_normal:'ᱥᱟᱫᱷᱟᱨᱚᱱ', opt_apt_loss:'ᱨᱮᱸᱜᱮᱡ ᱠᱚᱢ', opt_apt_weak:'ᱟᱹᱰᱤ ᱨᱩᱣᱟᱹ', pl_location:'ᱴᱷᱟᱶ...', pl_type:'ᱚᱞ ᱢᱮ...', years:'ᱥᱮᱨᱢᱟ', pl_height: 'ᱡᱮᱞᱠᱟ 175', pl_weight: 'ᱡᱮᱞᱠᱟ 70' },
+            'ks': { dashboard_title:'ڈیش بورڈ', welcome_user:'آداب, {userName}', welcome_sub:'تیار چھُ۔', select_analysis:'انتخاب کٔریو', tab_general:'عام', tab_dengue:'ڈینگی', tab_malaria:'ملیریا', tab_typhoid:'ٹائیفائیڈ', upload_title:'اپ لوڈ', upload_hint:'فائل تُلِیو', camera_title:'کیمرہ', camera_hint:'فوٹو تُلیو', label_age:'عمر', label_gender:'جنس', label_diet:'غذا', label_height:'قد (CM)', label_weight:'وزن (KG)', label_bp:'بی پی', label_sugar:'شوگر', label_thyroid:'تھائرائیڈ', label_platelets:'پلیٹلیٹس', label_feverdays:'دۄہ', label_pain:'درد', label_shiver:'کپکپی', label_fp:'طریقہ', label_travel:'سفر', label_stomach:'پیٹ درد', label_appetite:'بھوچھ', label_desc:'نِشانی *', btn_run_analysis:'تجزیہ', nav_home:'گھر', nav_videos:'ویڈیو', nav_consult:'مشورہ', menu_report:'رپورٹ', menu_blood:'خون', menu_chat:'کتھ', contact_us:'رابطہ', contact_text:'فون کریو۔', call_now:'فون', about_app:'متلق', about_text:'JeevPath AI', about_sub:'ہندوستان۔', label_id:'ID', btn_logout:'نیرن', opt_male: 'مرد', opt_female: 'زَنان', opt_other: 'باقی', opt_veg:'سبزی', opt_nonveg:'ماز', opt_vegan:'ویگن', opt_pain_mild:'کم', opt_pain_moderate:'درمیانہ', opt_pain_severe:'سخت', no:'نہ', yes:'آ', opt_shiver_yes:'آ, سخت', opt_fp_cont:'مسلسل', opt_fp_int:'رُک رُک', opt_apt_normal:'معمول', opt_apt_loss:'کم', opt_apt_weak:'کمزوری', pl_location:'جاے...', pl_type:'لیکھِیو...', years:'ؤری', pl_height: 'مثلن 175', pl_weight: 'مثلن 70' }
+        };
+
+        // --- MULTIPLE FILE HANDLER ---
+        const dt = new DataTransfer(); 
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            const container = document.getElementById('preview-container');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                // Add to DataTransfer
+                dt.items.add(file);
+                
+                // Create Thumbnail
+                const wrapper = document.createElement('div');
+                wrapper.className = 'thumb-wrapper';
+                
+                const img = document.createElement('img');
+                img.className = 'thumb-img';
+                img.src = URL.createObjectURL(file);
+                
+                // Click to view full
+                img.onclick = () => window.open(img.src, '_blank');
+                
+                // Close button
+                const closeBtn = document.createElement('div');
+                closeBtn.className = 'thumb-close';
+                closeBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                
+                closeBtn.onclick = function() {
+                    wrapper.remove();
+                    // Remove file logic requires advanced array manipulation 
+                    // Visual removal is standard for simple forms, for strict backend remove, 
+                    // we re-assign input.files from dt object
+                    removeFileFromFileList(file.name);
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(closeBtn);
+                container.appendChild(wrapper);
+            }
+            // Update input files to new accumulated list
+            e.target.files = dt.files;
+        }
+        
+        function removeFileFromFileList(name) {
+             const input = document.getElementById('multi-file-input');
+             const files = dt.files;
+             const newDt = new DataTransfer();
+             
+             for(let i = 0; i < files.length; i++) {
+                 if(files[i].name !== name) {
+                     newDt.items.add(files[i]);
+                 }
+             }
+             // Reset global DT
+             dt.items.clear();
+             for(let i = 0; i<newDt.files.length; i++){
+                 dt.items.add(newDt.files[i]);
+             }
+             input.files = dt.files;
+        }
+        
+        // Custom Dropdown Logic (Unchanged)
+        function toggleCustomDropdown(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            document.querySelectorAll('.custom-dd-container').forEach(el => {
+                if (el.id !== wrapperId) el.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        }
+
+        // Updated Selection Logic to store Translation Key
+        function selectOption(realSelectId, value, defaultText, wrapperId) {
+            document.getElementById(realSelectId).value = value;
+            const wrapper = document.getElementById(wrapperId);
+            let clickedOption = event.currentTarget; 
+            let tKey = clickedOption.getAttribute('data-t-key');
+            
+            const trigger = wrapper.querySelector('.custom-dd-trigger');
+            if(tKey) {
+                trigger.setAttribute('data-selected-t-key', tKey);
+                let text = clickedOption.innerText.trim();
+                wrapper.querySelector('.c-dd-val').innerText = text;
+            } else {
+                wrapper.querySelector('.c-dd-val').innerText = defaultText;
+                trigger.removeAttribute('data-selected-t-key');
+            }
+
+            wrapper.querySelectorAll('.c-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            clickedOption.classList.add('selected');
+            wrapper.classList.remove('open');
+        }
+
+        function selectLang(code, name) {
+            document.getElementById('selected-language-input').value = code;
+            const wrapper = document.getElementById('dd-wrapper-lang');
+            wrapper.querySelector('.c-dd-val').innerText = name;
+            wrapper.querySelectorAll('.c-option').forEach(opt => opt.classList.remove('selected'));
+            const selectedOpt = wrapper.querySelector(`.c-option[data-value="${code}"]`);
+            if(selectedOpt) selectedOpt.classList.add('selected');
+            wrapper.classList.remove('open');
+            applyTranslation(code);
+        }
+
+        function applyTranslation(lang) {
+            const data = translations[lang] || translations['en'];
+            const dataEn = translations['en']; 
+            
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.getAttribute('data-translate-key');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                if(key === 'welcome_user' && el.getAttribute('data-username')) {
+                    text = text.replace('{userName}', el.getAttribute('data-username'));
+                }
+                if(text) {
+                     if(el.children.length === 0) {
+                         el.innerText = text;
+                     } else {
+                         el.childNodes.forEach(node => {
+                            if (node.nodeType === 3 && node.nodeValue.trim() !== '') {
+                                node.nodeValue = text; 
+                            }
+                         });
+                     }
+                }
+            });
+
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                if(text) el.placeholder = text;
+            });
+
+            document.querySelectorAll('[data-translate-title]').forEach(el => {
+                const key = el.getAttribute('data-translate-title');
+                let text = data[key];
+                if (!text) text = dataEn[key];
+                if(text) el.title = text;
+            });
+
+            document.querySelectorAll('.c-option[data-t-key]').forEach(el => {
+                const key = el.getAttribute('data-t-key');
+                let text = data[key];
+                if(!text) text = dataEn[key];
+                if(text) {
+                    let iconHTML = el.querySelector('i')?.outerHTML || '';
+                    el.innerHTML = text + ' ' + iconHTML;
+                }
+            });
+
+            document.querySelectorAll('.custom-dd-trigger[data-selected-t-key]').forEach(el => {
+                const key = el.getAttribute('data-selected-t-key');
+                if(key) {
+                    let text = data[key];
+                    if(!text) text = dataEn[key];
+                    const valDisplay = el.querySelector('.c-dd-val');
+                    if(valDisplay && text) valDisplay.innerText = text;
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-dd-container')) {
+                document.querySelectorAll('.custom-dd-container').forEach(el => {
+                    el.classList.remove('open');
+                });
+            }
+        });
+
+        function toggleMenu() {
+            document.getElementById('sideOverlay').classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+        }
+
+        function toggleProfile() {
+            document.getElementById('profileModal').classList.toggle('open');
+            document.body.classList.toggle('menu-open');
+        }
+
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            document.querySelectorAll('.drawer-dropdown').forEach(item => {
+                if(item.id !== id) item.classList.remove('active');
+            });
+            el.classList.toggle('active');
+        }
+
+        function updateForm(type) {
+            document.querySelectorAll('.disease-group').forEach(el => el.classList.remove('active'));
+            let galleryHint = "Reports, X-Ray"; // Updated hint for multi files
+            let cameraHint = "Click Photo";
+            
+            if(type === 'General Checkup') { document.getElementById('fields-general').classList.add('active'); galleryHint = "Select Files"; cameraHint = "Report Photo"; }
+            if(type === 'Dengue Fever') { document.getElementById('fields-dengue').classList.add('active'); galleryHint = "CBC Report"; cameraHint = "Lab Report"; }
+            if(type === 'Malaria') { document.getElementById('fields-malaria').classList.add('active'); galleryHint = "Smear Report"; cameraHint = "Test Photo"; }
+            if(type === 'Typhoid') { document.getElementById('fields-typhoid').classList.add('active'); galleryHint = "Widal/Stool"; cameraHint = "Widal Photo"; }
+            
+            document.getElementById('hintTextGallery').innerText = galleryHint;
+            document.getElementById('hintTextCamera').innerText = cameraHint;
+        }
+
+        applyTranslation('en');
+    </script>
+</body>
+</html>

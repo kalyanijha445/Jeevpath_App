@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reports History - JeevPath AI</title>
+
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <!-- Fonts & Icons from Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* --- GLOBAL VARIABLES (Matching Dashboard) --- */
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --accent: #D1FAE5;
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.04);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --radius-box: 24px;
+            --radius-btn: 50px;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            /* Padding for the floating header */
+            padding: 110px 0 30px; 
+            color: var(--text-dark);
+        }
+
+        /* --- UI COMPONENTS (Matching Dashboard) --- */
+        .glass-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-btn);
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: var(--shadow-glass);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .header-btn {
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: 0.2s;
+            background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            color: var(--primary); font-size: 1.1rem; text-decoration: none;
+        }
+        .header-btn:active { transform: scale(0.95); }
+        
+        .header-title-block {
+            font-weight: 700; font-size: 0.95rem; color: var(--text-dark);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* --- Container for Body Content --- */
+        .container-app { 
+            padding: 0 20px; 
+            max-width: 540px; 
+            margin: 0 auto; 
+            position: relative; 
+        }
+
+        /* --- Heading --- */
+        .section-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 25px;
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* --- Report Grid List (Styled like Blood Bank) --- */
+        .report-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative; 
+            overflow: hidden; 
+            transition: transform 0.2s, box-shadow 0.3s;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .report-card::after {
+            content: ''; 
+            position: absolute; bottom: 0; left: 0; 
+            width: 0%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), #34D399);
+            transition: width 0.4s ease;
+        }
+        .report-card:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08); 
+        }
+        .report-card:hover::after { width: 100%; }
+
+
+        .report-avatar {
+            width: 45px; height: 45px; border-radius: 12px;
+            background: var(--accent);
+            color: var(--primary-dark); display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-right: 15px;
+        }
+
+        .info { flex: 1; display: flex; align-items: center; }
+
+        .report-type-name { 
+            margin: 0 0 4px; 
+            color: var(--text-dark); 
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .report-timestamp { 
+            margin: 0; 
+            color: var(--text-gray); 
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: var(--primary-dark);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            flex-shrink: 0;
+        }
+
+        .eye-icon {
+            font-size: 1rem;
+            animation: eyeBlink 4s infinite cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        @keyframes eyeBlink {
+            0%, 50%, 100% { opacity: 1; }
+            52%, 58% { opacity: 0.3; }
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: var(--text-gray);
+            padding: 50px;
+            background: white;
+            border-radius: var(--radius-box);
+            margin-top: 40px;
+            box-shadow: var(--shadow-soft);
+            border: 1px dashed #ddd;
+        }
+        .empty-msg h3 { margin-top: 0; color: var(--primary); }
+
+        /* --- Profile Modal Styling (Copied from Dashboard) --- */
+        .profile-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 3000;
+            visibility: hidden; 
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.83, 0, 0.17, 1), visibility 0.5s;
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .profile-modal.open { 
+            visibility: visible;
+            transform: translateY(0); 
+        }
+        
+        .profile-header {
+            padding: 40px 20px 20px;
+            background: linear-gradient(135deg, var(--primary), #34D399);
+            color: white; text-align: center;
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); position: relative;
+        }
+        
+        .profile-close-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); width: 35px; height: 35px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; color: white;
+        }
+        
+        .profile-pic-lg {
+            width: 100px; height: 100px; border-radius: 50%; background: white;
+            color: var(--primary); font-size: 2.5rem; display: flex; justify-content: center; align-items: center;
+            margin: 0 auto 15px; border: 4px solid rgba(255,255,255,0.3);
+        }
+
+        .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .profile-email { opacity: 0.9; font-size: 0.9rem; margin-top: 5px; }
+        
+        .profile-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px; margin-top: 10px; }
+        .profile-card-item {
+            background: white; border-radius: 20px; padding: 20px 15px;
+            text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;
+        }
+        .p-icon { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .p-label { display: block; font-size: 0.8rem; color: var(--text-gray); margin-bottom: 5px; }
+        .p-val { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+        
+        .modal-footer-logout { margin-top: auto; padding: 30px; }
+        .logout-pill {
+            display: block; width: 100%; text-align: center; padding: 18px;
+            background: #FFE4E6; color: #DC2626; border-radius: var(--radius-btn);
+            font-weight: 700; transition: 0.2s; text-decoration: none;
+        }
+        /* End Profile Modal Styling */
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- PROFILE MODAL (Populated using Jinja 'user' object) -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="profile-close-btn" onclick="toggleProfile()" aria-label="Close profile">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="profile-pic-lg">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+        </div>
+        
+        <div class="profile-data-grid">
+             <div class="profile-card-item">
+                <i class="fa-solid fa-calendar-day p-icon"></i>
+                <span class="p-label">Age</span>
+                <span class="p-val">{{ user.age }} Years</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-venus-mars p-icon"></i>
+                <span class="p-label">Gender</span>
+                <span class="p-val">{{ user.gender }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-utensils p-icon"></i>
+                <span class="p-label">Diet</span>
+                <span class="p-val">{{ user.diet }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-file-medical-alt p-icon"></i>
+                <span class="p-label">ID</span>
+                <span class="p-val">#JP8291</span>
+            </div>
+        </div>
+
+        <div class="modal-footer-logout">
+            <a href="/logout" class="logout-pill">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout Securely
+            </a>
+        </div>
+    </div>
+
+
+    <header class="glass-header">
+        <a href="/user_dashboard" class="header-btn" aria-label="Back to dashboard">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        </a>
+        
+        <div class="header-title-block">
+            <i class="fa-solid fa-scroll"></i> REPORT HISTORY
+        </div>
+        
+        <button class="header-btn" onclick="toggleProfile()" aria-label="Open profile">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <div class="container-app">
+        
+        <div class="section-header">
+            All Medical Analyses
+        </div>
+
+        {% if reports %}
+            <div class="report-grid">
+                {% for report in reports %}
+                <div class="report-card">
+                    
+                    <div class="info">
+                        <!-- Dynamic Icon based on report type -->
+                        <div class="report-avatar">
+                            {% if 'Dengue' in report.checkup_type %}<i class="fa-solid fa-mosquito"></i>
+                            {% elif 'Malaria' in report.checkup_type %}<i class="fa-solid fa-virus"></i>
+                            {% elif 'Typhoid' in report.checkup_type %}<i class="fa-solid fa-temperature-arrow-up"></i>
+                            {% else %}<i class="fa-solid fa-file-medical-alt"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <div class="report-type-name">{{ report.checkup_type }}</div>
+                            <p class="report-timestamp">
+                                <i class="fa-regular fa-calendar-alt"></i>
+                                {{ report.timestamp.strftime('%d-%b-%Y | %I:%M %p') }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <a href="/view_report/{{ report.id }}" class="btn-view">
+                        <i class="fa-regular fa-eye eye-icon"></i> View Result
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-msg">
+                <h3>No Recent Analyses Found</h3>
+                <p>Start a new AI diagnosis on the dashboard!</p>
+            </div>
+        {% endif %}
+
+    </div>
+    
+    <script>
+        function toggleProfile() {
+            const modal = document.getElementById('profileModal');
+            modal.classList.toggle('open');
+            if (modal.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+    </script>
+
+</body>
+</html>

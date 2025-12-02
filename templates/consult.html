@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeevPath AI - Consultation</title>
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* --- GLOBAL THEME (User Dashboard Exact Match) --- */
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --accent: #D1FAE5;
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.04);
+            --radius-box: 30px; 
+            --radius-btn: 50px;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        html { 
+            scroll-behavior: smooth; 
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            /* Bottom padding ensures content clears the fixed nav */
+            padding: 120px 0 110px;
+            color: var(--text-dark);
+            transition: 0.3s filter;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.menu-open { overflow: hidden; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- UI COMPONENTS --- */
+        select.hidden-real-select { display: none !important; }
+        
+        .custom-dd-container { position: relative; width: 100%; border-radius: 20px; background: white; transition: 0.3s; }
+        .custom-dd-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px 20px; font-size: 0.95rem; font-weight: 600; color: var(--text-dark); background: transparent; border: 1px solid transparent; border-radius: 20px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); font-family: 'Poppins', sans-serif;}
+        .custom-dd-trigger:active, .custom-dd-container.open .custom-dd-trigger { background-color: #f0fdf4; border-color: var(--primary); }
+        .c-dd-label { font-size: 0.75rem; color: var(--text-gray); display: block; margin-bottom: 2px; }
+        .c-dd-val { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .c-arrow { color: var(--primary); transition: transform 0.3s; flex-shrink: 0;}
+        .custom-dd-container.open .c-arrow { transform: rotate(180deg); }
+        .custom-dd-options { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 999; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden; border: 1px solid var(--accent); max-height: 250px; overflow-y: auto; }
+        .custom-dd-container.open .custom-dd-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .c-option { padding: 12px 16px; font-size: 0.95rem; font-weight: 500; color: var(--text-dark); border-bottom: 1px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .c-option:last-child { border-bottom: none; }
+        .c-option:hover, .c-option.selected { background-color: var(--accent); color: var(--primary-dark); }
+        .c-check { display: none; color: var(--primary); }
+        .c-option.selected .c-check { display: block; }
+
+        /* HEADER */
+        .glass-header { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-radius: var(--radius-btn); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: var(--shadow-soft); border: 1px solid rgba(255, 255, 255, 0.6); }
+        
+        .menu-btn, .user-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: 0.2s; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: var(--primary); font-size: 1.2rem; }
+        .header-title { font-weight: 700; font-size: 1rem; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; }
+
+        /* SIDE NAVIGATION */
+        .side-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 2000; }
+        .side-overlay.active { opacity: 1; visibility: visible; }
+        
+        .side-drawer { 
+            position: fixed; top: 0; left: 0; height: 100%; width: 80%; max-width: 340px; 
+            background: var(--white); z-index: 2001; 
+            transform: translateX(-110%); transition: cubic-bezier(0.165, 0.84, 0.44, 1) 0.5s; 
+            padding: 30px 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.1); 
+            display: flex; flex-direction: column; justify-content: space-between; 
+            overflow-y: auto; cursor: default; 
+        }
+        .side-overlay.active .side-drawer { transform: translateX(0); }
+        
+        .brand-block { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+        .brand-logo { width: 40px; height: 40px; object-fit: contain; }
+        .brand-name { font-weight: 700; font-size: 1.3rem; color: var(--primary-dark); }
+        
+        .nav-items { display: flex; flex-direction: column; gap: 12px; }
+        
+        .drawer-link { 
+            padding: 15px; background: #f3f4f6; border-radius: 15px; 
+            font-weight: 500; color: var(--text-dark); display: flex; 
+            align-items: center; gap: 12px; transition: 0.2s; 
+        }
+        .drawer-link i { color: var(--primary); font-size: 1.1rem; } 
+        .drawer-link:active { background: var(--accent); color: var(--primary-dark); }
+        
+        .drawer-dropdown { 
+            background: #f3f4f6; border-radius: 15px; overflow: hidden; transition: 0.3s; 
+        }
+        .dd-trigger { 
+            width: 100%; padding: 15px; background: transparent; border: none; 
+            display: flex; align-items: center; justify-content: space-between; 
+            font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 500; 
+            color: var(--text-dark); cursor: pointer; 
+        }
+        .dd-left { display: flex; align-items: center; gap: 12px; } 
+        .dd-left i { color: var(--primary); font-size: 1.1rem; }
+        .dd-arrow { font-size: 0.8rem; transition: transform 0.3s; color: var(--text-gray); }
+        
+        .dd-content { 
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s; 
+            background: white; border-top: 1px solid transparent; opacity: 0; 
+        }
+        .drawer-dropdown.active .dd-content { 
+            max-height: 300px; padding: 15px; border-top: 1px solid #eee; opacity: 1; 
+        }
+        .drawer-dropdown.active { 
+            background: white; border: 1px solid var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+        }
+        .drawer-dropdown.active .dd-arrow { transform: rotate(180deg); color: var(--primary); }
+        
+        .dd-text { font-size: 0.85rem; color: var(--text-gray); line-height: 1.5; }
+        .dd-btn-small { display: inline-block; margin-top: 10px; padding: 8px 16px; background: var(--primary); color: white; border-radius: 20px; font-size: 0.8rem; }
+        .close-drawer-btn { position: absolute; top: 10px; right: -50px; color: white; font-size: 2rem; background: transparent; border: none; cursor: pointer; padding:10px;}
+        .version-text { text-align: center; color: var(--text-gray); font-size: 0.8rem; padding: 20px 0 10px; }
+
+        /* Profile Modal */
+        .profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; visibility: hidden; transform: translateY(100%); transition: 0.5s cubic-bezier(0.83, 0, 0.17, 1); display: flex; flex-direction: column; overflow-y: auto; }
+        .profile-modal.open { visibility: visible; transform: translateY(0); }
+        .profile-header { padding: 40px 20px 20px; background: linear-gradient(135deg, var(--primary), #34D399); color: white; text-align: center; border-radius: 0 0 40px 40px; position: relative; }
+        .profile-close-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); width: 35px; height: 35px; border-radius: 50%; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+        .profile-pic-lg { width: 100px; height: 100px; border-radius: 50%; background: white; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--primary); }
+        .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .profile-email { opacity: 0.9; font-size: 0.9rem; margin-top: 5px; }
+        .profile-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px; margin-top: 10px; }
+        .profile-card-item { background: white; border-radius: 20px; padding: 20px 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; }
+        .p-icon { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .p-label { font-size: 0.8rem; color: var(--text-gray); display: block; margin-bottom: 5px;}
+        .p-val { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+        .modal-footer-logout { margin-top: auto; padding: 30px; }
+        .logout-pill { display: block; width: 100%; text-align: center; padding: 18px; background: #FFE4E6; color: #DC2626; border-radius: var(--radius-btn); font-weight: 700; margin-top: auto; }
+        
+        /* BOTTOM NAV */
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: white; 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            padding: 12px 10px 20px; 
+            border-radius: 25px 25px 0 0; /* Standard "Pill" Shape */
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); 
+            z-index: 100;
+            box-sizing: border-box; /* Ensures padding doesn't expand height */
+        }
+        .b-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-gray); }
+        .b-nav-item.active { color: var(--primary); }
+        .b-nav-item i { font-size: 1.3rem; }
+        .b-nav-text { font-size: 0.7rem; font-weight: 500; }
+
+        /* --- CONSULTATION PAGE SPECIFIC --- */
+        .container-app { padding: 10px 20px; max-width: 600px; margin: 0 auto; z-index: 1; position: relative;}
+
+        /* Appt Banner */
+        .appt-banner {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white; padding: 20px; 
+            border-radius: var(--radius-box); 
+            margin-bottom: 30px; box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            position: relative; overflow: hidden;
+        }
+        .appt-title { margin: 0 0 5px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;}
+        
+        .upcoming-list { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+        .upcoming-card {
+            background: rgba(255,255,255,0.15); padding: 15px; border-radius: 20px;
+            -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); 
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .u-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .doc-n { font-weight: 600; font-size: 1rem; }
+        .u-time { font-size: 0.8rem; opacity: 0.9; display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+        .join-btn {
+            display: inline-block; padding: 8px 20px; background: white; color: #2563EB;
+            border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .wait-pill { 
+            display: inline-block; padding: 5px 12px; background: rgba(0,0,0,0.2); 
+            border-radius: 20px; font-size: 0.75rem; margin-top: 8px; 
+        }
+
+        /* Search & Filter Bar - WIDER & TALLER STYLE */
+        .search-row { 
+            display: flex; gap: 10px; margin-bottom: 20px; 
+            width: 100%; justify-content: center;
+        }
+        
+        /* Updated: Increased vertical padding (12px) for a wider/bigger look, 50px right padding for mic */
+        .search-bar-wrap { 
+            display: flex; align-items: center; background: white; 
+            border-radius: 30px; padding: 12px 50px 12px 20px; 
+            box-shadow: var(--shadow-soft); transition: 0.3s;
+            flex: 1; width: 100%; position: relative;
+        }
+        .search-bar-wrap:focus-within { border-color: var(--primary); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15); }
+        
+        .search-input { border: none; background: transparent; flex-grow: 1; width: 100%; font-size: 0.95rem; font-family: 'Poppins', sans-serif;}
+        
+        /* Mic button remains absolutely positioned but accounts for new larger padding */
+        .mic-btn { 
+            position: absolute; right: 5px; top: 0; bottom: 0; margin: auto;
+            border: none; background: transparent; color: var(--primary); 
+            font-size: 1.1rem; padding: 0; cursor: pointer; transition: 0.2s; 
+            height: 40px; width: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .mic-btn:active { transform: scale(0.8); }
+        .mic-btn.listening { animation: pulse 1.5s infinite; color: #DC2626; }
+        
+        .filter-toggle-btn { 
+            width: 50px; background: white; border: none; border-radius: 20px;
+            color: var(--text-dark); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
+        }
+
+        /* Doctor List */
+        .section-heading { font-size: 1.1rem; margin-bottom: 15px; font-weight: 600; color: var(--text-dark); }
+        .doc-grid { display: grid; gap: 20px; }
+        
+        .doc-card-modern {
+            background: white; border-radius: 30px; padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; gap: 15px; border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        .doc-card-modern:hover { border-color: var(--accent); transform: translateY(-3px); }
+        
+        .doc-head { display: flex; gap: 15px; align-items: center; }
+        .doc-av {
+            width: 60px; height: 60px; border-radius: 20px; background: var(--accent);
+            color: var(--primary); display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 700; flex-shrink: 0;
+        }
+        
+        .d-info h3 { margin: 0; font-size: 1.1rem; color: var(--text-dark); }
+        .d-spec { color: var(--primary); font-size: 0.85rem; font-weight: 500; display: block; margin: 3px 0;}
+        .d-exp { color: var(--text-gray); font-size: 0.8rem; }
+        
+        .d-form { border-top: 1px solid #f3f4f6; padding-top: 15px; }
+        .modern-textarea {
+            width: 100%; border: 1px solid #e5e7eb; border-radius: 16px;
+            padding: 12px; font-family: 'Poppins', sans-serif; font-size: 0.9rem;
+            margin-bottom: 12px; transition: 0.3s; background: transparent;
+        }
+        .modern-textarea:focus { border-color: var(--primary); background: #f0fdf4; outline: none; }
+        
+        .req-btn {
+            width: 100%; padding: 12px; border: none; background: var(--text-dark);
+            color: white; border-radius: 12px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: 0.2s;
+        }
+        .req-btn:active { transform: scale(0.98); }
+
+        .empty-state { text-align: center; color: var(--text-gray); padding: 40px; display: none; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDE MENU -->
+    <div class="side-overlay" id="sideOverlay" onclick="if(event.target === this) toggleMenu()">
+        <button class="close-drawer-btn" onclick="toggleMenu()" aria-label="Close menu">
+            <i class="fa-solid fa-times" aria-hidden="true"></i>
+        </button>
+        
+        <div class="side-drawer">
+            <div>
+                <div class="brand-block">
+                    <img src="static/logo.png" alt="Logo" class="brand-logo">
+                    <div class="brand-name">JEEVPATH</div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <select id="appLang" class="hidden-real-select"></select>
+                    <div class="custom-dd-container" id="dd-wrapper-lang">
+                        <div class="custom-dd-trigger" onclick="toggleCustomDropdown('dd-wrapper-lang')">
+                            <span class="c-dd-val">English</span>
+                            <i class="fa-solid fa-chevron-down c-arrow"></i>
+                        </div>
+                        <div class="custom-dd-options">
+                            <div class="c-option selected" data-value="en" onclick="selectLang('en', 'English')">English <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="hi" onclick="selectLang('hi', 'हिन्दी (Hindi)')">हिन्दी (Hindi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mr" onclick="selectLang('mr', 'मराठी (Marathi)')">मराठी (Marathi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="gu" onclick="selectLang('gu', 'ગુજરાતી (Gujarati)')">ગુજરાતી (Gujarati) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="bn" onclick="selectLang('bn', 'বাংলা (Bengali)')">বাংলা (Bengali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="pa" onclick="selectLang('pa', 'ਪੰਜਾਬੀ (Punjabi)')">ਪੰਜਾਬੀ (Punjabi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="te" onclick="selectLang('te', 'తెలుగు (Telugu)')">తెలుగు (Telugu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ta" onclick="selectLang('ta', 'தமிழ் (Tamil)')">தமிழ் (Tamil) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ml" onclick="selectLang('ml', 'മലയാളം (Malayalam)')">മലയാളം (Malayalam) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kn" onclick="selectLang('kn', 'ಕನ್ನಡ (Kannada)')">ಕನ್ನಡ (Kannada) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ur" onclick="selectLang('ur', 'اردو (Urdu)')">اردو (Urdu) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="or" onclick="selectLang('or', 'ଓଡ଼ିଆ (Odia)')">ଓଡ଼ିଆ (Odia) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="as" onclick="selectLang('as', 'অসমীয়া (Assamese)')">অসমীয়া (Assamese) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mni" onclick="selectLang('mni', 'মৈতৈলোন্ (Manipuri)')">মৈতৈলোন্ (Manipuri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ne" onclick="selectLang('ne', 'नेपाली (Nepali)')">नेपाली (Nepali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sa" onclick="selectLang('sa', 'संस्कृतम् (Sanskrit)')">संस्कृतम् (Sanskrit) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sd" onclick="selectLang('sd', 'सिंधी (Sindhi)')">सिंधी (Sindhi) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="doi" onclick="selectLang('doi', 'डोगरी (Dogri)')">डोगरी (Dogri) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="kok" onclick="selectLang('kok', 'कोंकणी (Konkani)')">कोंकणी (Konkani) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="brx" onclick="selectLang('brx', 'बोड़ो (Bodo)')">बोड़ो (Bodo) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="mai" onclick="selectLang('mai', 'मैथिली (Maithili)')">मैथिली (Maithili) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="sat" onclick="selectLang('sat', 'ᱥᱟᱱᱛᱟᱲᱤ (Santali)')">ᱥᱟᱱᱛᱟᱲᱤ (Santali) <i class="fa-solid fa-check c-check"></i></div>
+                            <div class="c-option" data-value="ks" onclick="selectLang('ks', 'کٲشُر (Kashmiri)')">کٲشُر (Kashmiri) <i class="fa-solid fa-check c-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matches Order: Report History, Blood Bank, Chat with Us, Contact Us, About App -->
+                <div class="nav-items">
+                    <a href="/reports" class="drawer-link"><i class="fa-solid fa-file-medical"></i> <span data-translate-key="menu_report">Report History</span></a>
+                    <a href="/blood_bank" class="drawer-link"><i class="fa-solid fa-hand-holding-droplet"></i> <span data-translate-key="menu_blood">Blood Bank</span></a>
+                    <a href="/chat" class="drawer-link"><i class="fa-solid fa-comments"></i> <span data-translate-key="menu_chat">Chat With Us</span></a>
+                    
+                    <div class="drawer-dropdown" id="dd-contact">
+                        <button class="dd-trigger" onclick="toggleAccordion('dd-contact')">
+                            <span class="dd-left"><i class="fa-solid fa-phone"></i> <span data-translate-key="contact_us">Contact Us</span></span> <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content"><div class="dd-text" data-translate-key="contact_text">Call our helpline.</div><a href="#" class="dd-btn-small" data-translate-key="call_now">Call Now</a></div>
+                    </div>
+
+                    <div class="drawer-dropdown" id="dd-about">
+                        <button class="dd-trigger" onclick="toggleAccordion('dd-about')">
+                            <span class="dd-left"><i class="fa-solid fa-info-circle"></i> <span data-translate-key="about_app">About App</span></span> <i class="fa-solid fa-chevron-down dd-arrow"></i>
+                        </button>
+                        <div class="dd-content"><div class="dd-text" data-translate-key="about_text">Using advanced algorithms.</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="version-text">v1.0.4 Application</div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="profile-close-btn" onclick="toggleProfile()" aria-label="Close profile"><i class="fa-solid fa-xmark"></i></button>
+            <div class="profile-pic-lg"><i class="fa-solid fa-user"></i></div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+        </div>
+        <div class="profile-data-grid">
+            <div class="profile-card-item">
+                <i class="fa-solid fa-calendar-day p-icon"></i>
+                <span class="p-label" data-translate-key="label_age">Age</span>
+                <span class="p-val">{{ user.age }} <span data-translate-key="years">Years</span></span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-venus-mars p-icon"></i>
+                <span class="p-label" data-translate-key="label_gender">Gender</span>
+                <span class="p-val">{{ user.gender }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-utensils p-icon"></i>
+                <span class="p-label" data-translate-key="label_diet">Diet</span>
+                <span class="p-val">{{ user.diet }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-file-medical-alt p-icon"></i>
+                <span class="p-label" data-translate-key="label_id">ID</span>
+                <span class="p-val">#JP8291</span>
+            </div>
+        </div>
+        <div class="modal-footer-logout">
+            <a href="/logout" class="logout-pill" data-translate-key="btn_logout">Logout Securely</a>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-header">
+        <button class="menu-btn" onclick="toggleMenu()" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="header-title">
+            <span data-translate-key="consult_title">CONSULT</span>
+        </div>
+        <button class="user-btn" onclick="toggleProfile()" aria-label="Open profile"><i class="fa-regular fa-user"></i></button>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="container-app">
+        
+        <!-- SECTION 1: APPOINTMENT DASHBOARD -->
+        {% if my_appts %}
+        <div class="appt-banner">
+            <h3 class="appt-title"><i class="fa-solid fa-calendar-check"></i> <span data-translate-key="my_appts_title">Your Schedule</span></h3>
+            <div class="upcoming-list">
+                {% for appt in my_appts %}
+                <div class="upcoming-card">
+                    <div class="u-header">
+                        <span class="doc-n">Dr. {{ appt.doctor.name }}</span>
+                        {% if appt.status == 'Confirmed' %} <i class="fa-solid fa-check-circle"></i> {% else %} <i class="fa-regular fa-clock"></i> {% endif %}
+                    </div>
+                    <div class="u-time"><i class="fa-solid fa-clock"></i> {{ appt.date_booked.strftime('%d %b, %I:%M %p') }}</div>
+                    
+                    {% if appt.status == 'Confirmed' and appt.meeting_link %}
+                        <a href="{{ appt.meeting_link }}" target="_blank" class="join-btn"><i class="fa-solid fa-video"></i> <span data-translate-key="join_call">JOIN CALL</span></a>
+                    {% else %}
+                        <span class="wait-pill" data-translate-key="status_pending">Pending Approval</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- SEARCH BAR (CENTRALIZED) -->
+        <h3 class="section-heading" data-translate-key="book_new">Book Specialist</h3>
+        <div class="search-row">
+            <div class="search-bar-wrap">
+                <i class="fa-solid fa-magnifying-glass" style="color:#9CA3AF; margin-right:8px;"></i>
+                <input type="text" id="docSearch" class="search-input" placeholder="Search doctor or specialty..." data-translate-placeholder="doc_search_pl" onkeyup="filterDocs()">
+                <button class="mic-btn" id="voiceBtn" onclick="startDictation()" aria-label="Voice search"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div style="background:#DCFCE7; color:#166534; padding:15px; border-radius:15px; text-align:center; margin-bottom:20px; font-weight:600;">
+                <i class="fa-solid fa-check-circle"></i> {{ messages[0] }}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- DOCTOR LIST -->
+        <div class="doc-grid" id="doctorsGrid">
+            {% for doctor in doctors %}
+            <div class="doc-card-modern">
+                <div class="doc-head">
+                    <div class="doc-av">{{ doctor.name[0] }}</div>
+                    <div class="d-info">
+                        <h3 class="d-name">Dr. {{ doctor.name }}</h3>
+                        <span class="d-spec filter-target">{{ doctor.department }}</span>
+                        <span class="d-exp">{{ doctor.experience }} <span data-translate-key="exp_years">Years Exp.</span></span>
+                    </div>
+                </div>
+                
+                <form action="/book_appointment" method="POST" class="d-form">
+                    <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                    <textarea name="symptoms" class="modern-textarea" placeholder="Brief reason for visit..." data-translate-placeholder="brief_reason" required></textarea>
+                    <button type="submit" class="req-btn">
+                        <i class="fa-solid fa-calendar-plus"></i> <span data-translate-key="btn_request">Request Appointment</span>
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="empty-state" style="display:block;">
+                <span data-translate-key="no_docs_avail">No doctors found. Please register doctors to test.</span>
+            </div>
+            {% endfor %}
+            <div class="empty-state" id="noDocMsg"><span data-translate-key="no_docs_match">No doctors found matching search.</span></div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAV (CONSTANT & FIXED) -->
+    <div class="bottom-nav">
+        <a href="/user_dashboard" class="b-nav-item"><i class="fa-solid fa-house"></i><span class="b-nav-text" data-translate-key="nav_home">Home</span></a>
+        <a href="/videos" class="b-nav-item"><i class="fa-brands fa-youtube"></i><span class="b-nav-text" data-translate-key="nav_videos">Videos</span></a>
+        <a href="#" class="b-nav-item active"><i class="fa-solid fa-user-doctor"></i><span class="b-nav-text" data-translate-key="nav_consult">Consult</span></a>
+    </div>
+
+    <script>
+        // COMPLETE TRANSLATION DATA
+        const translations = {
+            'en': { consult_title:'Consult', nav_home:'Home', nav_videos:'Videos', nav_consult:'Consult', my_appts_title:'Your Schedule', join_call:'JOIN CALL', status_pending:'Pending Approval', book_new:'Book Specialist', btn_request:'Request Appointment', menu_report:'Report History', menu_blood:'Blood Bank', menu_chat:'Chat With Us', contact_us:'Contact Us', contact_text:'Call our helpline.', call_now:'Call Now', about_app:'About App', about_text:'JeevPath AI uses advanced algorithms.', about_sub:'Designed for India.', label_age:'Age', label_gender:'Gender', label_diet:'Diet', label_id:'ID', btn_logout:'Logout Securely', exp_years:'Years Exp.', brief_reason:'Brief reason for visit...', doc_search_pl:'Search doctor or specialty...', no_docs_avail:'No doctors found.', no_docs_match:'No matching doctors found.', years:'Years' },
+            'hi': { consult_title:'परामर्श', nav_home:'होम', nav_videos:'वीडियो', nav_consult:'परामर्श', my_appts_title:'आपकी अनुसूची', join_call:'कॉल ज्वाइन करें', status_pending:'मंजूरी लंबित', book_new:'स्पेशलिस्ट बुक करें', btn_request:'अपॉइंटमेंट मांगें', menu_report:'रिपोर्ट इतिहास', menu_blood:'ब्लड बैंक', menu_chat:'चैट करें', contact_us:'संपर्क करें', contact_text:'हेल्पलाइन पर कॉल करें।', call_now:'कॉल करें', about_app:'ऐप के बारे में', about_text:'AI मेडिकल रिपोर्ट का विश्लेषण करता है।', about_sub:'भारत के लिए।', label_age:'आयु', label_gender:'लिंग', label_diet:'आहार', label_id:'आईडी', btn_logout:'लॉग आउट करें', exp_years:'वर्ष अनुभव', brief_reason:'आने का कारण...', doc_search_pl:'डॉक्टर खोजें...', no_docs_avail:'कोई डॉक्टर नहीं मिला', no_docs_match:'कोई डॉक्टर नहीं मिला', years:'वर्ष' },
+            'mr': { consult_title:'सल्ला', nav_home:'होम', nav_videos:'व्हिडिओ', nav_consult:'सल्ला', my_appts_title:'तुमचे वेळापत्रक', join_call:'कॉल जॉईन करा', status_pending:'मंजूरी प्रलंबित', book_new:'डॉक्टर निवडा', btn_request:'अपॉइंटमेंट मागा', menu_report:'इतिहास', menu_blood:'रक्त पेढी', menu_chat:'गप्पा', contact_us:'संपर्क', contact_text:'कॉल करा.', call_now:'कॉल', about_app:'बद्दल', about_text:'AI अहवाल तपासते.', about_sub:'भारतासाठी.', label_age:'वय', label_gender:'लिंग', label_diet:'आहार', label_id:'आयडी', btn_logout:'बाहेर पडा', exp_years:'वर्षे अनुभव', brief_reason:'कारण...', doc_search_pl:'शोध...', no_docs_avail:'डॉक्टर नाहीत', no_docs_match:'डॉक्टर नाहीत', years:'वर्षे' },
+            'gu': { consult_title:'સલાહ', nav_home:'હોમ', nav_videos:'વિડિઓ', nav_consult:'સલાહ', my_appts_title:'તમારું શેડ્યૂલ', join_call:'જોડાઓ', status_pending:'બાકી', book_new:'બુક કરો', btn_request:'વિનંતી', menu_report:'રિપોર્ટ', menu_blood:'બ્લડ', menu_chat:'વાતચીત', contact_us:'સંપર્ક', contact_text:'કોલ કરો.', call_now:'કોલ', about_app:'વિશે', about_text:'AI વિશ્લેષણ.', about_sub:'ભારત માટે.', label_age:'ઉંમર', label_gender:'લિંગ', label_diet:'ખોરાક', label_id:'ID', btn_logout:'બહાર', exp_years:'વર્ષ અનુભવ', brief_reason:'કારણ...', doc_search_pl:'શોધો...', no_docs_avail:'મળ્યા નથી', no_docs_match:'મળ્યા નથી', years:'વર્ષ' },
+            'bn': { consult_title:'পরামর্শ', nav_home:'হোম', nav_videos:'ভিডিও', nav_consult:'পরামর্শ', my_appts_title:'সময়সূচী', join_call:'জয়েন করুন', status_pending:'অপেক্ষমাণ', book_new:'বুক করুন', btn_request:'অনুরোধ', menu_report:'ইতিহাস', menu_blood:'রক্ত', menu_chat:'চ্যাট', contact_us:'যোগাযোগ', contact_text:'কল করুন।', call_now:'কল', about_app:'সম্পর্কে', about_text:'AI বিশ্লেষণ।', about_sub:'ভারত।', label_age:'বয়স', label_gender:'লিঙ্গ', label_diet:'খাদ্য', label_id:'ID', btn_logout:'লগ আউট', exp_years:'বছর অভিজ্ঞতা', brief_reason:'कारण...', doc_search_pl:'অনুসন্ধান...', no_docs_avail:' নেই', no_docs_match:'নেই', years:'বছর' },
+            'pa': { consult_title:'ਸਲਾਹ', nav_home:'ਹੋਮ', nav_videos:'ਵੀਡੀਓ', nav_consult:'ਸਲਾਹ', my_appts_title:'ਤੁਹਾਡੀ ਸਮਾਂ ਸਾਰਣੀ', join_call:'ਜੁਆਇਨ ਕਰੋ', status_pending:'ਬਕਾਇਆ', book_new:'ਬੁੱਕ ਕਰੋ', btn_request:'ਬੇਨਤੀ', menu_report:'ਰਿਪੋਰਟ', menu_blood:'ਬਲੱਡ', menu_chat:'ਗੱਲਬਾਤ', contact_us:'ਸੰਪਰਕ', contact_text:'ਕਾਲ ਕਰੋ।', call_now:'ਕਾਲ', about_app:'ਬਾਰੇ', about_text:'AI ਵਿਸ਼ਲੇਸ਼ਣ।', about_sub:'ਭਾਰਤ ਲਈ।', label_age:'ਉਮਰ', label_gender:'ਲਿੰਗ', label_diet:'ਖੁਰਾਕ', label_id:'ID', btn_logout:'ਲੌਗ ਆਉਟ', exp_years:'ਸਾਲ ਤਜਰਬਾ', brief_reason:'ਕਾਰਨ...', doc_search_pl:'ਖੋਜ...', no_docs_avail:'ਨਹੀਂ ਲੱਭੇ', no_docs_match:'ਨਹੀਂ ਲੱਭੇ', years:'ਸਾਲ' },
+            'te': { consult_title:'సలహా', nav_home:'హోమ్', nav_videos:'వీడియోలు', nav_consult:'సలహా', my_appts_title:'షెడ్యూల్', join_call:'చేరండి', status_pending:'పెండింగ్', book_new:'బుక్ చేయండి', btn_request:'అభ్యర్థన', menu_report:'రిపోర్ట్', menu_blood:'బ్లడ్', menu_chat:'మాట్లాడండి', contact_us:'సంప్రదించండి', contact_text:'కాల్ చేయండి.', call_now:'కాల్', about_app:'గురించి', about_text:'AI విశ్లేషణ.', about_sub:'భారత్ కోసం.', label_age:'వయస్సు', label_gender:'లింగం', label_diet:'ఆహారం', label_id:'ID', btn_logout:'లాగ్ అవుట్', exp_years:'ఏళ్ల అనుభవం', brief_reason:'కారణం...', doc_search_pl:'వెతకండి...', no_docs_avail:'లేరు', no_docs_match:'లేరు', years:'ఏళ్లు' },
+            'ta': { consult_title:'ஆலோசனை', nav_home:'முகப்பு', nav_videos:'வீடியோ', nav_consult:'ஆலோசனை', my_appts_title:'அட்டவணை', join_call:'இணைய', status_pending:'நிலுவை', book_new:'பதிவு', btn_request:'கோரிக்கை', menu_report:'அறிக்கை', menu_blood:'ரத்தம்', menu_chat:'அரட்டை', contact_us:'தொடர்பு', contact_text:'அழைக்கவும்.', call_now:'அழைப்பு', about_app:'பற்றி', about_text:'AI பகுப்பாய்வு.', about_sub:'இந்தியா.', label_age:'வயது', label_gender:'பாலினம்', label_diet:'உணவு', label_id:'ID', btn_logout:'வெளியேறு', exp_years:'வருட அனுபவம்', brief_reason:'காரணம்...', doc_search_pl:'தேடு...', no_docs_avail:'இல்லை', no_docs_match:'இல்லை', years:'ஆண்டுகள்' },
+            'ml': { consult_title:'കൺസൾട്ട്', nav_home:'ഹോം', nav_videos:'വീഡിയോ', nav_consult:'കൺസൾട്ട്', my_appts_title:'ഷെഡ്യൂൾ', join_call:'ചേരുക', status_pending:'പെൻഡിങ്', book_new:'ബുക്ക് ചെയ്യൂ', btn_request:'അപേക്ഷിക്കുക', menu_report:'റിപ്പോർട്ട്', menu_blood:'രക്തം', menu_chat:'ചാറ്റ്', contact_us:'ബന്ധപ്പെടുക', contact_text:'വിളിക്കുക.', call_now:'വിളിക്കുക', about_app:'കുറിച്ച്', about_text:'AI വിശകലനം.', about_sub:'ഇന്ത്യ.', label_age:'വയസ്സ്', label_gender:'ലിംഗം', label_diet:'ഭക്ഷണം', label_id:'ID', btn_logout:'പുറത്ത്', exp_years:'വർഷം', brief_reason:'കാരണം...', doc_search_pl:'തിരയൂ...', no_docs_avail:'ഇല്ല', no_docs_match:'ഇല്ല', years:'വയസ്സ്' },
+            'kn': { consult_title:'ಸಲಹೆ', nav_home:'ಮುಖಪುಟ', nav_videos:'ವೀಡಿಯೊ', nav_consult:'ಸಲಹೆ', my_appts_title:'ವೇಳಾಪಟ್ಟಿ', join_call:'ಸೇರಿ', status_pending:'ಬಾಕಿ', book_new:'ಬುಕ್ ಮಾಡಿ', btn_request:'ವಿನಂತಿಸಿ', menu_report:'ವರದಿ', menu_blood:'ರಕ್ತ', menu_chat:'ಚಾಟ್', contact_us:'ಸಂಪರ್ಕಿಸಿ', contact_text:'ಕರೆ ಮಾಡಿ.', call_now:'ಕರೆ', about_app:'ಬಗ್ಗೆ', about_text:'AI ವಿಶ್ಲೇಷಣೆ.', about_sub:'ಭಾರತ.', label_age:'ವಯಸ್ಸು', label_gender:'ಲಿಂಗ', label_diet:'ಆಹಾರ', label_id:'ID', btn_logout:'ಹೊರಗೆ', exp_years:'ವರ್ಷ ಅನುಭವ', brief_reason:'ಕಾರಣ...', doc_search_pl:'ಹುಡುಕಿ...', no_docs_avail:'ಇಲ್ಲ', no_docs_match:'ಇಲ್ಲ', years:'ವರ್ಷ' },
+            'ur': { consult_title:'مشورہ', nav_home:'ہوم', nav_videos:'ویڈیو', nav_consult:'مشورہ', my_appts_title:'شیڈول', join_call:'شامل ہوں', status_pending:'زیر التوا', book_new:'بک کریں', btn_request:'درخواست', menu_report:'رپورٹ', menu_blood:'بلڈ', menu_chat:'چیٹ', contact_us:'رابطہ', contact_text:'کال کریں۔', call_now:'کال', about_app:'بارے میں', about_text:'AI تجزیہ۔', about_sub:'بھارت.', label_age:'عمر', label_gender:'جنس', label_diet:'غذا', label_id:'ID', btn_logout:'لاگ آؤٹ', exp_years:'سال کا تجربہ', brief_reason:'وجہ...', doc_search_pl:'تلاش...', no_docs_avail:'کوئی نہیں', no_docs_match:'کوئی نہیں', years:'سال' },
+            'or': { consult_title:'ପରାମର୍ଶ', nav_home:'ମୂଳ', nav_videos:'ଭିଡିଓ', nav_consult:'ପରାମର୍ଶ', my_appts_title:'ସୂଚୀ', join_call:'ଯୋଗ ଦିଅନ୍ତୁ', status_pending:'ବାକି ଅଛି', book_new:'ବୁକ୍ କରନ୍ତୁ', btn_request:'ଅନୁରୋଧ', menu_report:'ରିପୋର୍ଟ', menu_blood:'ରକ୍ତ', menu_chat:'ଚାଟ୍', contact_us:'ଯୋଗାଯୋଗ', contact_text:'କଲ୍ କରନ୍ତୁ।', call_now:'କଲ୍', about_app:'ବିଷୟରେ', about_text:'AI ବିଶ୍ଲେଷଣ।', about_sub:'ଭାରତ।', label_age:'ବୟସ', label_gender:'ଲିଙ୍ଗ', label_diet:'ଖାଦ୍ୟ', label_id:'ID', btn_logout:'ଲଗ୍ ଆଉଟ୍', exp_years:'ବର୍ଷ ଅଭିଜ୍ଞତା', brief_reason:'କାରଣ...', doc_search_pl:'ଖୋଜନ୍ତୁ...', no_docs_avail:'ନାହିଁ', no_docs_match:'ନାହିଁ', years:'ବର୍ଷ' },
+            'as': { consult_title:'পৰামৰ্শ', nav_home:'গৃহ', nav_videos:'ভিডিঅ’', nav_consult:'পৰামৰ্শ', my_appts_title:'সময়সূচী', join_call:'যোগ দিয়ক', status_pending:'বাকি', book_new:'বুক কৰক', btn_request:'অনুৰোধ', menu_report:'ৰিপৰ্ট', menu_blood:'তেজ', menu_chat:'কথা', contact_us:'যোগাযোগ', contact_text:'কল কৰক।', call_now:'কল', about_app:'বিষয়ে', about_text:'AI বিশ্লেষণ।', about_sub:'ভাৰত।', label_age:'বয়স', label_gender:'লিংগ', label_diet:'খাদ্য', label_id:'ID', btn_logout:'লগ আউট', exp_years:'বছৰ অভিজ্ঞতা', brief_reason:'কাৰণ...', doc_search_pl:'বিচাৰক...', no_docs_avail:'নাই', no_docs_match:'নাই', years:'বছৰ' },
+            'mni': { consult_title:'পাউ', nav_home:'য়ুম', nav_videos:'ভিদিও', nav_consult:'পাউ', my_appts_title:'সেদ্যুল', join_call:'য়ায়ু', status_pending:'ঙাইরি', book_new:'বুক তৌ', btn_request:'হাইঝবা', menu_report:'রিপোক', menu_blood:'ই', menu_chat:'ৱারি', contact_us:'পাউ ফাওনবা', contact_text:'কোল তৌবিয়ু।', call_now:'কোল', about_app:'মরমদা', about_text:'AI নৈনবা।', about_sub:'ইন্ দিয়া।', label_age:'চহি', label_gender:'নিপা/নুপী', label_diet:'চাক', label_id:'ID', btn_logout:'থোকপা', exp_years:'চহি', brief_reason:'মরম...', doc_search_pl:'থিবীয়ু...', no_docs_avail:'লৈতে', no_docs_match:'লৈতে', years:'চহি' },
+            'ne': { consult_title:'सल्लाह', nav_home:'घर', nav_videos:'भिडियो', nav_consult:'सल्लाह', my_appts_title:'तालिका', join_call:'जोडिनुहोस्', status_pending:'बाँकी', book_new:'बुक गर्नुहोस्', btn_request:'अनुरোধ', menu_report:'रिपोर्ट', menu_blood:'रगत', menu_chat:'कुराकानी', contact_us:'सम्पर्क', contact_text:'फोन गर्नुहोस्।', call_now:'कल', about_app:'बारेमा', about_text:'AI विश्लेषण।', about_sub:'भारत।', label_age:'उमेर', label_gender:'लिंग', label_diet:'खाना', label_id:'ID', btn_logout:'लग आउट', exp_years:'वर्ष अनुभव', brief_reason:'कारण...', doc_search_pl:'खोज्नुहोस्...', no_docs_avail:'छैन', no_docs_match:'छैन', years:'वर्ष' },
+            'sa': { consult_title:'परामर्श', nav_home:'गृहम्', nav_videos:'चलचित्र', nav_consult:'परामर्श', my_appts_title:'समयसारिणी', join_call:'सम्मिलतु', status_pending:'लम्बित', book_new:'चिनोतु', btn_request:'प्रार्थਨਾ', menu_report:'प्रतिवेदन', menu_blood:'रक्त', menu_chat:'संलाप', contact_us:'संपर्क', contact_text:'आह्वयतु।', call_now:'आह्वयतु', about_app:'विषये', about_text:'AI विश्लेषणम्।', about_sub:'भारते।', label_age:'आयुः', label_gender:'लिङ्ग', label_diet:'आहार', label_id:'अभि', btn_logout:'निर्गमनम्', exp_years:'वर्षाणि', brief_reason:'कारणम्...', doc_search_pl:'अन्वेषणम्...', no_docs_avail:'नास्ति', no_docs_match:'नास्ति', years:'वर्षाणि' },
+            'sd': { consult_title:'صلاح', nav_home:'گھر', nav_videos:'وڊيو', nav_consult:'صلاح', my_appts_title:'شيڊول', join_call:'شامل ٿيو', status_pending:'باقي', book_new:'بڪ ڪريو', btn_request:'گذارش', menu_report:'رپورٽ', menu_blood:'رقت', menu_chat:'چيٽ', contact_us:'رابطو', contact_text:'ڪال ڪريو.', call_now:'ڪال', about_app:'بابت', about_text:'AI تجزيو.', about_sub:'ڀارت.', label_age:'عمر', label_gender:'جنس', label_diet:'کاڌو', label_id:'ID', btn_logout:'نڪرڻ', exp_years:'سال تجربو', brief_reason:'سبب...', doc_search_pl:'ڳوليو...', no_docs_avail:'ناهي', no_docs_match:'ناهي', years:'سال' },
+            'doi': { consult_title:'सलाह', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'सलाह', my_appts_title:'अनुसूची', join_call:'जुड़ो', status_pending:'बाकी', book_new:'बुक करो', btn_request:'बैनती', menu_report:'रपोट', menu_blood:'खून', menu_chat:'गल्ल', contact_us:'संपर्क', contact_text:'कॉल करो।', call_now:'फोन', about_app:'बारे च', about_text:'AI जांच।', about_sub:'भारत।', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाना', label_id:'ID', btn_logout:'बाहर', exp_years:'साल तजरबा', brief_reason:'वजाह...', doc_search_pl:'तलाशो...', no_docs_avail:'नेईं', no_docs_match:'नेईं', years:'बरें' },
+            'kok': { consult_title:'सल्लो', nav_home:'घर', nav_videos:'व्हिडिओ', nav_consult:'सल्लो', my_appts_title:'वेळापत्रक', join_call:'येयात', status_pending:'उरलां', book_new:'बुक कर', btn_request:'विणवणी', menu_report:'अहवाल', menu_blood:'रगत', menu_chat:'गजाली', contact_us:'संपर्क', contact_text:'फोन कर.', call_now:'फोन', about_app:'विशीं', about_text:'AI तपासणी.', about_sub:'भारत.', label_age:'पिराय', label_gender:'लिंग', label_diet:'जेवण', label_id:'ID', btn_logout:'भायर', exp_years:'वर्सां अणभव', brief_reason:'कारण...', doc_search_pl:'सोद...', no_docs_avail:'ना', no_docs_match:'ना', years:'वर्सां' },
+            'brx': { consult_title:'सकनाय', nav_home:'न', nav_videos:'भिडिअ', nav_consult:'सकनाय', my_appts_title:'थिरां', join_call:'हाब', status_pending:'दं', book_new:'बुक खालाम', btn_request:'आरज', menu_report:'रिफर्त', menu_blood:'थै', menu_chat:'रायज्लाय', contact_us:'जानबुं', contact_text:'कॉल खालाम।', call_now:'कॉल', about_app:'सोमोन्दै', about_text:'AI बिजिरनाय।', about_sub:'भारत।', label_age:'बैस', label_gender:'लिन्गो', label_diet:'आदार', label_id:'ID', btn_logout:'अंखा', exp_years:'बोसोर', brief_reason:'जाहोन...', doc_search_pl:'नागिर...', no_docs_avail:'गैया', no_docs_match:'गैया', years:'बोसोर' },
+            'mai': { consult_title:'परामर्श', nav_home:'घर', nav_videos:'वीडियो', nav_consult:'परामर्श', my_appts_title:'समय-सारणी', join_call:'जुड़ू', status_pending:'बाँकी', book_new:'बुक करू', btn_request:'आग्रह', menu_report:'रपट', menu_blood:'रक्त', menu_chat:'गप्प', contact_us:'संपर्क', contact_text:'कॉल करू।', call_now:'कॉल', about_app:'विषय', about_text:'AI विश्लेषण।', about_sub:'भारत।', label_age:'उम्र', label_gender:'लिंग', label_diet:'खाए', label_id:'ID', btn_logout:'बाहर', exp_years:'वर्ष अनुभव', brief_reason:'कारण...', doc_search_pl:'खोजू...', no_docs_avail:'नहि', no_docs_match:'नहि', years:'वर्ष' },
+            'sat': { consult_title:'ᱥᱚᱞᱦᱟ', nav_home:'ᱚᱲᱟᱜ', nav_videos:'ᱵᱤᱰᱤᱭᱳ', nav_consult:'ᱥᱚᱞᱦᱟ', my_appts_title:'ᱚᱠᱛᱚ', join_call:'ᱥᱮᱞᱮᱫ', status_pending:'ᱢᱮᱱᱟᱜᱼᱟ', book_new:'ᱵᱩᱠ ᱢᱮ', btn_request:'ᱟᱨᱫᱟᱥ', menu_report:'ᱨᱤᱯᱚᱴ', menu_blood:'ᱢᱟᱭᱟᱝ', menu_chat:'ᱜᱟᱞᱢᱟᱨᱟᱣ', contact_us:'ᱥᱟᱹᱜᱟᱹᱭ', contact_text:'ᱠᱚᱞ ᱢᱮ.', call_now:'ᱠᱚᱞ', about_app:'ᱵᱟᱵᱚᱛ', about_text:'AI ᱡᱟᱸᱪ.', about_sub:'ᱥᱤᱧᱚᱛ.', label_age:'ᱵᱚᱭᱚᱥ', label_gender:'ᱡᱟᱱᱟᱝ', label_diet:'ᱡᱚᱢ', label_id:'ID', btn_logout:'ᱚᱰᱚᱠ', exp_years:'ᱥᱮᱨᱢᱟ', brief_reason:'ᱠᱟᱨᱚᱱ...', doc_search_pl:'ᱥᱮᱸᱫᱽᱨᱟ...', no_docs_avail:'ᱵᱟᱹᱱᱩᱜᱼᱟ', no_docs_match:'ᱵᱟᱹᱱᱩᱜᱼᱟ', years:'ᱥᱮᱨᱢᱟ' },
+            'ks': { consult_title:'مشورہ', nav_home:'گھر', nav_videos:'ویڈیو', nav_consult:'مشورہ', my_appts_title:'شیڈول', join_call:'شامِل', status_pending:'روٗدُمت', book_new:'بُک کٔریو', btn_request:'دَرخواست', menu_report:'رپورٹ', menu_blood:'خون', menu_chat:'کتھ', contact_us:'رابطہ', contact_text:'فون کریو۔', call_now:'فون', about_app:'متلق', about_text:'AI تجزیہ۔', about_sub:'ہندوستان۔', label_age:'عمر', label_gender:'جنس', label_diet:'غذا', label_id:'ID', btn_logout:'نیرن', exp_years:'ؤری تجربہٕ', brief_reason:'وجہ...', doc_search_pl:'ژھانڈِیو...', no_docs_avail:'نہٕ', no_docs_match:'نہٕ', years:'ؤری' }
+        };
+
+        const savedLang = localStorage.getItem('userLanguage') || 'en';
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameMap = {
+                'en': 'English', 'hi': 'हिन्दी (Hindi)', 'mr': 'मराठी (Marathi)', 
+                'gu': 'ગુજરાતી (Gujarati)', 'bn': 'বাংলা (Bengali)', 'pa': 'ਪੰਜਾਬੀ (Punjabi)', 
+                'te': 'తెలుగు (Telugu)', 'ta': 'தமிழ் (Tamil)', 'ml': 'മലയാളം (Malayalam)', 
+                'kn': 'ಕನ್ನಡ (Kannada)', 'ur': 'اردو (Urdu)', 'or': 'ଓଡ଼ିଆ (Odia)', 
+                'as': 'অসমীয়া (Assamese)', 'mni': 'মৈতৈলোন্ (Manipuri)', 'ne': 'नेपाली (Nepali)',
+                'sa': 'संस्कृतम् (Sanskrit)', 'sd': 'सिंधी (Sindhi)', 'doi': 'डोगरी (Dogri)',
+                'kok': 'कोंकणी (Konkani)', 'brx': 'बोड़ो (Bodo)', 'mai': 'मैथिली (Maithili)',
+                'sat': 'ᱥᱟᱱᱛᱟᱲᱤ (Santali)', 'ks': 'کٲشُر (Kashmiri)'
+            };
+            if(savedLang) {
+                const ddVal = document.querySelector('#dd-wrapper-lang .c-dd-val');
+                const opt = document.querySelector(`.c-option[data-value="${savedLang}"]`);
+                if(ddVal && opt) {
+                    ddVal.innerText = nameMap[savedLang];
+                    document.querySelectorAll('.c-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                }
+                applyTranslation(savedLang);
+            }
+        });
+
+        function applyTranslation(lang) {
+            localStorage.setItem('userLanguage', lang);
+            const data = translations[lang] || translations['en'];
+            const fallback = translations['en'];
+            
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.getAttribute('data-translate-key');
+                let text = data[key] || fallback[key];
+                
+                let hasText = false;
+                el.childNodes.forEach(node => {
+                    if (node.nodeType === 3 && node.nodeValue.trim() !== '') {
+                        node.nodeValue = text; 
+                        hasText = true;
+                    }
+                });
+                if(!hasText && el.children.length === 0) el.innerText = text;
+            });
+            
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.placeholder = data[key] || fallback[key];
+            });
+        }
+
+        // --- FILTER & SEARCH ---
+        function filterDocs() {
+            const query = document.getElementById('docSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.doc-card-modern');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const name = card.querySelector('.d-name').innerText.toLowerCase();
+                const spec = card.querySelector('.d-spec').innerText.toLowerCase();
+                
+                if (name.includes(query) || spec.includes(query)) {
+                    card.style.display = "flex";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+            
+            const noRes = document.getElementById('noDocMsg');
+            if (visibleCount === 0 && cards.length > 0) noRes.style.display = "block";
+            else noRes.style.display = "none";
+        }
+
+        // --- VOICE SEARCH ---
+        function startDictation() {
+            if (window.webkitSpeechRecognition || window.SpeechRecognition) {
+                const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+                const recognition = new SpeechRecognition();
+                const btn = document.getElementById('voiceBtn');
+                
+                const voiceMap = {'en':'en-US','hi':'hi-IN','gu':'gu-IN','bn':'bn-IN','ta':'ta-IN','te':'te-IN','mr':'mr-IN','kn':'kn-IN','ml':'ml-IN'};
+                const currentLang = localStorage.getItem('userLanguage') || 'en';
+                recognition.lang = voiceMap[currentLang] || 'en-US';
+                
+                recognition.start();
+                btn.classList.add('listening');
+
+                recognition.onresult = (event) => {
+                    const txt = event.results[0][0].transcript;
+                    document.getElementById('docSearch').value = txt;
+                    filterDocs();
+                    btn.classList.remove('listening');
+                };
+                recognition.onend = () => btn.classList.remove('listening');
+                recognition.onerror = () => btn.classList.remove('listening');
+            } else {
+                alert("Voice search supported in Chrome/Edge.");
+            }
+        }
+
+        // --- MENU/UI TOGGLES ---
+        function toggleMenu() { document.getElementById('sideOverlay').classList.toggle('active'); document.body.classList.toggle('menu-open'); }
+        function toggleProfile() { document.getElementById('profileModal').classList.toggle('open'); document.body.classList.toggle('menu-open'); }
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            document.querySelectorAll('.drawer-dropdown').forEach(item => { if(item.id !== id) item.classList.remove('active'); });
+            el.classList.toggle('active');
+        }
+        function toggleCustomDropdown(id) { 
+            const wrapper = document.getElementById(id);
+            document.querySelectorAll('.custom-dd-container').forEach(el => { if (el.id !== id) el.classList.remove('open'); });
+            wrapper.classList.toggle('open'); 
+        }
+        function selectLang(code, name) {
+            const wrapper = document.getElementById('dd-wrapper-lang');
+            wrapper.querySelector('.c-dd-val').innerText = name;
+            wrapper.querySelectorAll('.c-option').forEach(o => o.classList.remove('selected'));
+            wrapper.querySelector(`.c-option[data-value="${code}"]`).classList.add('selected');
+            wrapper.classList.remove('open');
+            applyTranslation(code);
+        }
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.custom-dd-container')) document.querySelectorAll('.custom-dd-container').forEach(el=>el.classList.remove('open'));
+        });
+        
+    </script>
+</body>
+</html>

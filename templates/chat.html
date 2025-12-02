@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeevPath Chat</title>
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* --- THEME SETTINGS --- */
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --secondary: #128C7E;
+            --bg-color: #FAFAFA;
+            --bg-chat: #E0F2F1;
+            --text-dark: #1F2937;
+            --white: #ffffff;
+            --incoming: #FFFFFF;
+            --outgoing: #D1FAE5;
+            --radius-btn: 50px;
+            --radius-box: 24px;
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-gray: #6B7280;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            background-color: var(--bg-color); 
+            height: 100dvh; 
+            width: 100%;
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* --- GLASS HEADER --- */
+        .glass-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 600px;
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-btn);
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: var(--shadow-glass);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .header-btn {
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: 0.2s;
+            background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            color: var(--primary); font-size: 1.1rem; text-decoration: none;
+            position: relative; overflow: hidden;
+            flex-shrink: 0;
+        }
+        .header-btn:active { transform: scale(0.92); }
+
+        .header-mid-info { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+        .h-avatar {
+            width: 35px; height: 35px; border-radius: 50%;
+            background: #D1FAE5; color: var(--primary-dark);
+            display: none; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem; border: 2px solid white;
+        }
+        .h-title {
+            font-weight: 700; font-size: 0.95rem; color: var(--text-dark);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .h-status { font-size: 0.65rem; color: var(--primary); display: none; }
+
+        /* --- PROFILE MODAL --- */
+        .profile-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 3000;
+            visibility: hidden; 
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.83, 0, 0.17, 1), visibility 0.5s;
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .profile-modal.open { visibility: visible; transform: translateY(0); }
+        
+        .profile-header {
+            padding: 40px 20px 20px;
+            background: linear-gradient(135deg, var(--primary), #34D399);
+            color: white; text-align: center;
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); position: relative;
+        }
+        .profile-close-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); width: 35px; height: 35px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: none; color: white;
+        }
+        .profile-pic-lg {
+            width: 100px; height: 100px; border-radius: 50%; background: white;
+            color: var(--primary); font-size: 2.5rem; display: flex; justify-content: center; align-items: center;
+            margin: 0 auto 15px; border: 4px solid rgba(255,255,255,0.3);
+        }
+        .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .profile-email { opacity: 0.9; font-size: 0.9rem; margin-top: 5px; }
+        
+        .profile-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px; margin-top: 10px; }
+        .profile-card-item {
+            background: white; border-radius: 20px; padding: 20px 15px;
+            text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;
+        }
+        .p-icon { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .p-label { display: block; font-size: 0.8rem; color: var(--text-gray); margin-bottom: 5px; }
+        .p-val { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+        .modal-footer-logout { margin-top: auto; padding: 30px; }
+        .logout-pill {
+            display: block; width: 100%; text-align: center; padding: 18px;
+            background: #FFE4E6; color: #DC2626; border-radius: var(--radius-btn);
+            font-weight: 700; transition: 0.2s; text-decoration: none;
+        }
+
+        /* --- LAYOUT STRUCTURE --- */
+        .app-container {
+            width: 100%; height: 100dvh; 
+            display: flex; background: white; position: relative;
+        }
+
+        /* --- CONTACTS SIDEBAR --- */
+        .sidebar-panel {
+            width: 350px; flex-shrink: 0; background: white;
+            display: flex; flex-direction: column;
+            border-right: 1px solid #f3f3f3;
+            padding-top: 80px; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .contacts-scroll { overflow-y: auto; flex: 1; padding: 10px; }
+
+        .c-card {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; border-radius: 20px;
+            margin-bottom: 8px; cursor: pointer; transition: 0.2s;
+            background: white; border: 1px solid transparent;
+        }
+        .c-card:hover { background: #F9FAFB; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .c-card.active { 
+            background: linear-gradient(135deg, #ECFDF5, white); 
+            border-color: #D1FAE5; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.1); 
+        }
+
+        .c-img {
+            width: 50px; height: 50px; border-radius: 18px;
+            background: linear-gradient(45deg, var(--text-dark), #4B5563);
+            color: white; display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .c-detail h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #374151; }
+        .c-detail p { margin: 2px 0 0; font-size: 0.75rem; color: #9CA3AF; }
+
+        /* --- CHAT AREA WITH DOODLES --- */
+        .chat-main-area {
+            flex: 1; position: relative;
+            background-color: #E0F7EF; /* Softer Greenish Tint base */
+            display: flex; flex-direction: column;
+            
+            /* DOODLE PATTERN SVG (Hearts, Capsules, Plus Signs) */
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2310B981' stroke-width='1.2' stroke-opacity='0.25' stroke-linecap='round' stroke-linejoin='round'%3E%3C!-- Heart --%3E%3Cpath d='M10 25c0-4.4 3.6-8 8-8 2.5 0 4.5 1.2 6 3 1.5-1.8 3.5-3 6-3 4.4 0 8 3.6 8 8 0 5.5-5 10-14 18-9-8-14-12.5-14-18z'/%3E%3C!-- Capsule --%3E%3Cpath d='M65 25 l-10 10 a5 5 0 1 1-7-7 l10-10 a5 5 0 1 1 7 7 z' /%3E%3C!-- Cross/Plus --%3E%3Cpath d='M75 75 v10 M70 80 h10' /%3E%3C!-- Pill Round --%3E%3Ccircle cx='20' cy='80' r='5' /%3E%3C!-- Heartbeat --%3E%3Cpath d='M40 50 l3-5 5 10 5-5 3 2' /%3E%3C/g%3E%3C/svg%3E");
+            background-size: 100px;
+        }
+        
+        /* OVERLAY - Lightened to reveal Doodles */
+        .chat-main-area::before {
+            content:''; position: absolute; top:0; left:0; width:100%; height:100%;
+            /* Lower opacity on the overlay so icons pop through more */
+            background: rgba(255, 255, 255, 0.5); 
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- EMPTY STATE --- */
+        .placeholder-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%; z-index: 5;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #64748B; padding: 20px; text-align: center;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+        .ph-icon { font-size: 5rem; color: #CBD5E1; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); }
+
+        /* --- MESSAGES CONTAINER --- */
+        .chat-stream {
+            flex: 1; z-index: 1; 
+            overflow-y: auto;
+            padding: 90px 20px 20px;
+            display: flex; flex-direction: column; gap: 12px;
+            scroll-behavior: auto;
+        }
+
+        .bubble-row { display: flex; width: 100%; }
+        
+        .bubble {
+            max-width: 75%; padding: 8px 10px 8px 14px; 
+            border-radius: 18px; position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 0.92rem; line-height: 1.5;
+            display: flex; flex-direction: column;
+            transition: all 0.2s;
+        }
+        
+        .bubble.sent {
+            margin-left: auto; background: var(--outgoing);
+            color: var(--text-dark); border-bottom-right-radius: 4px;
+        }
+        .bubble.received {
+            margin-right: auto; background: white;
+            color: var(--text-dark); border-bottom-left-radius: 4px;
+        }
+        
+        .media-prev-chat { 
+            width: 100%; max-width: 300px; border-radius: 12px; margin-bottom: 5px; 
+            display: block; cursor: pointer; 
+        }
+
+        .meta-row { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; opacity: 0.6; }
+        .m-time { font-size: 0.65rem; }
+        .m-tick { font-size: 0.7rem; color: #4FA8D6; }
+
+        /* --- INPUT BAR FIXED FOR MOBILE VISIBILITY --- */
+        .chat-dock {
+            z-index: 10; 
+            padding: 10px 15px max(15px, env(safe-area-inset-bottom));
+            background: white; border-top: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+            display: flex; flex-direction: column; gap: 10px;
+            width: 100%;
+        }
+
+        .preview-tray {
+            display: none; padding: 10px; background: #f3f4f6; 
+            border-radius: 15px; border-left: 4px solid var(--primary);
+            font-size: 0.85rem; color: #555; position: relative;
+            animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .preview-tray.active { display: flex; align-items: center; justify-content: space-between; }
+        .clear-file-btn { background: #ef4444; color: white; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+
+        /* FIXED INPUT LAYOUT */
+        .input-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            width: 100%;
+        }
+        
+        .icon-btn {
+            font-size: 1.4rem; color: #64748B; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .text-field {
+            flex: 1; padding: 14px 20px; 
+            border-radius: 30px; border: none; background: #F3F4F6;
+            font-family: 'Poppins', sans-serif; font-size: 0.95rem;
+            min-width: 0; /* Important for flex child overflow handling */
+            transition: 0.3s;
+        }
+        .text-field:focus { background: #E5E7EB; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+
+        .send-btn {
+            width: 50px; height: 50px; 
+            min-width: 50px; /* Forces size not to shrink */
+            border-radius: 50%; border: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; font-size: 1.2rem; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s;
+            flex-shrink: 0; /* Prevents button disappearance on mobile */
+        }
+
+        @keyframes popUp { from{transform:translateY(10px); opacity:0} to{transform:translateY(0); opacity:1} }
+
+        /* --- RESPONSIVE MOBILE LOGIC --- */
+        @media (max-width: 768px) {
+            .app-container { overflow: hidden; }
+            .sidebar-panel { width: 100%; }
+            .chat-main-area {
+                position: absolute; top: 0; left: 100%; 
+                width: 100%; height: 100%; transition: left 0.3s ease-in-out;
+                z-index: 20;
+            }
+            .chat-main-area.open { left: 0; }
+            .glass-header { max-width: 90%; width: 90%; }
+        }
+    </style>
+</head>
+<body data-user-id="{{ user.id }}">
+
+    <!-- PROFILE MODAL (With full details from dashboard) -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="profile-close-btn" onclick="toggleProfile()" aria-label="Close profile">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="profile-pic-lg">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+        </div>
+
+        <div class="profile-data-grid">
+            <div class="profile-card-item">
+                <i class="fa-solid fa-calendar-day p-icon"></i>
+                <span class="p-label">Age</span>
+                <span class="p-val">{{ user.age }} Years</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-venus-mars p-icon"></i>
+                <span class="p-label">Gender</span>
+                <span class="p-val">{{ user.gender }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-utensils p-icon"></i>
+                <span class="p-label">Diet</span>
+                <span class="p-val">{{ user.diet }}</span>
+            </div>
+            <div class="profile-card-item">
+                <i class="fa-solid fa-file-medical-alt p-icon"></i>
+                <span class="p-label">ID</span>
+                <span class="p-val">#JP8291</span>
+            </div>
+        </div>
+
+        <div class="modal-footer-logout">
+            <a href="/logout" class="logout-pill">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout Securely
+            </a>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="glass-header">
+        <button id="mainBackBtn" class="header-btn" onclick="handleBackNav()" aria-label="Navigate Back">
+            <i class="fa-solid fa-arrow-left"></i> 
+        </button>
+
+        <div class="header-mid-info">
+            <div id="headerAvatar" class="h-avatar"></div>
+            <div>
+                <div id="headerTitle" class="h-title">MESSAGES</div>
+                <div id="headerStatus" class="h-status">● Online</div>
+            </div>
+        </div>
+
+        <button class="header-btn" aria-label="Profile" onclick="toggleProfile()">
+            <i class="fa-regular fa-user"></i>
+        </button>
+    </header>
+
+    <div class="app-container">
+        
+        <!-- SIDEBAR -->
+        <div class="sidebar-panel">
+            <div class="contacts-scroll">
+                {% for contact in contacts %}
+                <div class="c-card" onclick="selectContact('{{ contact.id }}', '{{ contact.name }}')">
+                    <div class="c-img">{{ contact.name[0] }}</div>
+                    <div class="c-detail">
+                        <h4>{{ contact.name }}</h4>
+                        <p>{{ contact.subtitle }}</p>
+                    </div>
+                </div>
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #9CA3AF;">
+                        <i class="fa-regular fa-paper-plane" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <br>No recent chats.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- MAIN CHAT SCREEN -->
+        <div id="chatArea" class="chat-main-area">
+            
+            <div id="placeholderScreen" class="placeholder-screen">
+                <div class="ph-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                <h2 style="font-weight: 400; color: #334155;">JeevPath Secure Chat</h2>
+                <p style="font-size: 0.9rem;">Select a contact to view conversation.<br>End-to-end encrypted.</p>
+            </div>
+
+            <!-- CHAT INTERFACE -->
+            <div id="chatInterface" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+                
+                <div id="msgContainer" class="chat-stream">
+                    <!-- Dynamic Messages injected here -->
+                </div>
+
+                <!-- DOCK (Preview & Input) -->
+                <div class="chat-dock">
+                    <div id="previewTray" class="preview-tray">
+                        <span id="fileName"><i class="fa-solid fa-image"></i> Photo Selected</span>
+                        <button type="button" class="clear-file-btn" onclick="clearFile()"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <div class="input-row">
+                        <label for="fileInput" class="icon-btn">
+                            <i class="fa-solid fa-paperclip"></i>
+                        </label>
+                        <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" onchange="handleFileSelect()">
+                        
+                        <input type="text" id="msgText" class="text-field" placeholder="Type a message..." autocomplete="off">
+                        
+                        <button class="send-btn" onclick="sendMessage()" aria-label="Send">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const myUserId = parseInt(document.body.getAttribute('data-user-id'));
+        let activeContactId = null;
+        let lastRenderedHTML = ''; 
+        var msgInterval;
+
+        const chatArea = document.getElementById('chatArea');
+        const headerTitle = document.getElementById('headerTitle');
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerStatus = document.getElementById('headerStatus');
+        const msgContainer = document.getElementById('msgContainer');
+        const previewTray = document.getElementById('previewTray');
+        const fileInput = document.getElementById('fileInput');
+
+        function toggleProfile() {
+            document.getElementById('profileModal').classList.toggle('open');
+        }
+
+        function updateHeaderUI(view) {
+            if (view === 'list') {
+                headerTitle.innerText = "MESSAGES";
+                headerAvatar.style.display = 'none';
+                headerStatus.style.display = 'none';
+            } else if (view === 'chat') {
+                headerAvatar.style.display = 'flex';
+                headerStatus.style.display = 'block';
+            }
+        }
+        
+        function handleBackNav() {
+            if (window.innerWidth <= 768 && activeContactId) {
+                chatArea.classList.remove('open');
+                activeContactId = null;
+                updateHeaderUI('list');
+                clearInterval(msgInterval); 
+                return;
+            }
+            window.location.href = '/user_dashboard';
+        }
+
+        function selectContact(id, name) {
+            activeContactId = parseInt(id);
+            headerTitle.innerText = name;
+            headerAvatar.innerText = name.charAt(0);
+            updateHeaderUI('chat');
+
+            document.getElementById('placeholderScreen').style.display = 'none';
+            document.getElementById('chatInterface').classList.remove('hidden');
+
+            if(window.innerWidth <= 768) {
+                chatArea.classList.add('open');
+            }
+
+            document.querySelectorAll('.c-card').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            lastRenderedHTML = '';
+            fetchMessages(); 
+            clearInterval(msgInterval);
+            msgInterval = setInterval(fetchMessages, 2000);
+        }
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                previewTray.classList.add('active');
+                document.getElementById('fileName').innerHTML = `<i class="fa-solid fa-file-circle-check"></i> ${file.name.substring(0, 15)}...`;
+                document.querySelector('.send-btn').style.transform = "scale(1.1)";
+            }
+        }
+
+        function clearFile() {
+            fileInput.value = '';
+            previewTray.classList.remove('active');
+            document.querySelector('.send-btn').style.transform = "scale(1)";
+        }
+
+        document.getElementById('msgText').addEventListener("keyup", function(e) {
+            if(e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            if (!activeContactId) return;
+
+            const textVal = document.getElementById('msgText').value;
+            const file = fileInput.files[0];
+
+            if (!textVal && !file) return;
+
+            const formData = new FormData();
+            formData.append('receiver_id', activeContactId);
+            formData.append('content', textVal);
+            if (file) formData.append('file', file);
+
+            const btn = document.querySelector('.send-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            fetch('/api/send_message', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    document.getElementById('msgText').value = '';
+                    clearFile(); 
+                    fetchMessages(); 
+                }
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+            });
+        }
+
+        function fetchMessages() {
+            if (!activeContactId) return;
+
+            fetch(`/api/get_messages/${activeContactId}`)
+            .then(res => res.json())
+            .then(data => {
+                let htmlBuilder = '';
+                htmlBuilder += `<div style="text-align:center; padding:15px; font-size:0.75rem; color:#888; background:#fff3cd; margin:10px auto; border-radius:10px; width:fit-content; opacity:0.8;"><i class="fa-solid fa-lock"></i> Chat secured</div>`;
+
+                data.forEach(msg => {
+                    const isMe = msg.sender_id === myUserId;
+                    const typeClass = isMe ? 'sent' : 'received';
+                    let contentHtml = '';
+                    
+                    if(msg.media_type === 'image') {
+                        contentHtml += `<img src="/uploads/${msg.media_path}" class="media-prev-chat" onclick="window.open(this.src)">`;
+                    } else if (msg.media_path) {
+                        contentHtml += `<a href="/uploads/${msg.media_path}" target="_blank" style="color:#0284c7;display:block;margin-bottom:5px;">📂 Attachment</a>`;
+                    }
+                    if(msg.content) contentHtml += `<div>${msg.content}</div>`;
+                    const tickIcon = isMe ? '<i class="fa-solid fa-check-double m-tick"></i>' : '';
+
+                    htmlBuilder += `
+                        <div class="bubble-row">
+                            <div class="bubble ${typeClass}">
+                                ${contentHtml}
+                                <div class="meta-row">
+                                    <span class="m-time">${msg.time}</span>
+                                    ${tickIcon}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (msgContainer.innerHTML.length !== htmlBuilder.length) {
+                    msgContainer.innerHTML = htmlBuilder;
+                    setTimeout(() => { msgContainer.scrollTop = msgContainer.scrollHeight; }, 100);
+                    lastRenderedHTML = htmlBuilder;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

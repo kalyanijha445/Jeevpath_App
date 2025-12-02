@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - JEEVPATH</title>
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Branding Colors */
+            --primary: #10B981;  /* India Green */
+            --primary-soft: #ECFDF5;
+            --primary-dark: #059669;
+            --saffron: #FF9933;  /* India Saffron */
+            --chakra-blue: #000080; /* Ashoka Chakra Blue */
+            
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #9CA3AF;
+            --white: #ffffff;
+            
+            --radius-btn: 40px; 
+            --radius-input: 14px;
+            --shadow-float: 0 8px 25px rgba(16, 185, 129, 0.18);
+            --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0; height: 100vh; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-dark); position: relative;
+        }
+
+        /* --- PRELOADER STYLES --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--white);
+            z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1), visibility 0.8s;
+        }
+
+        .loader-content {
+            position: relative;
+            width: 180px; height: 180px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* THE TRICOLOR ARCS (Symbolic India) */
+        
+        /* 1. Saffron Arc (Top Protection) */
+        .arc-saffron {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: var(--saffron);
+            animation: spin 2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+        }
+
+        /* 2. Green Arc (Bottom Growth) */
+        .arc-green {
+            position: absolute;
+            width: 80%; height: 80%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-bottom-color: var(--primary);
+            animation: spinReverse 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+        }
+
+        /* 3. Blue Core Glow (Chakra Energy) */
+        .chakra-core {
+            position: absolute;
+            width: 60%; height: 60%;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(0, 0, 128, 0.1);
+            animation: breathe 2s ease-in-out infinite;
+        }
+
+        .loader-logo {
+            width: 70px; height: 70px; object-fit: contain;
+            position: relative; z-index: 2;
+            animation: logoFade 2.2s ease-out forwards;
+        }
+
+        /* Minimalistic Text below */
+        .loader-text {
+            margin-top: 20px;
+            font-size: 2rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 4px;
+            /* Tricolor Gradient Text */
+            background: linear-gradient(90deg, var(--saffron) 20%, var(--primary) 80%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            height: 3rem; display: flex; align-items: center; justify-content: center;
+            position: relative; z-index: 10;
+        }
+
+        /* Keyframes */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spinReverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes breathe { 0%, 100% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.2; } }
+        @keyframes logoFade { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        
+        .hide-loader { opacity: 0; visibility: hidden; }
+
+        /* --- BACKGROUND LAYER --- */
+        .bg-animation-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0.5; }
+        .bg-icon { position: absolute; color: rgba(16, 185, 129, 0.15); animation: floatUp linear infinite; bottom: -50px; }
+        .i1 { left: 10%; font-size: 1.5rem; animation-duration: 8s; }
+        .i2 { left: 20%; font-size: 1.2rem; animation-duration: 12s; animation-delay: 2s; }
+        .i3 { left: 35%; font-size: 2rem; animation-duration: 10s; animation-delay: 4s; }
+        .i4 { left: 50%; font-size: 1.8rem; animation-duration: 14s; animation-delay: 1s; }
+        .i5 { left: 65%; font-size: 1.4rem; animation-duration: 11s; animation-delay: 3s; }
+        .i6 { left: 80%; font-size: 2.2rem; animation-duration: 9s; animation-delay: 5s; }
+        .i7 { left: 90%; font-size: 1rem; animation-duration: 13s; animation-delay: 0.5s; }
+        .i8 { left: 5%; font-size: 1.3rem; animation-duration: 15s; animation-delay: 6s; }
+        @keyframes floatUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
+
+        .content-layer { position: relative; z-index: 10; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .brand-area { text-align: center; margin-bottom: 25px; animation: fadeDown 0.8s ease-out; }
+        .logo-circle { width: 65px; height: 65px; background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; box-shadow: 0 5px 20px rgba(16, 185, 129, 0.25); border: 2px solid white; }
+        .logo-img { width: 40px; height: 40px; object-fit: contain; }
+        .brand-title { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); letter-spacing: 0.5px; margin: 0; text-transform: uppercase; }
+        .brand-sub { font-size: 0.8rem; color: var(--text-gray); font-weight: 500; margin-top: 2px; }
+
+        .login-wrapper { width: 100%; max-width: 320px; padding: 0 10px; display: flex; flex-direction: column; gap: 18px; }
+        .role-switch-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 10px; animation: fadeUp 0.6s ease-out 0.1s backwards; }
+        .role-option { flex: 1; position: relative; background: rgba(255, 255, 255, 0.8); border-radius: 18px; padding: 12px 10px; text-align: center; cursor: pointer; transition: all 0.4s var(--transition-bounce); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 5px 15px rgba(0,0,0,0.04); opacity: 0.7; overflow: hidden; }
+        .role-option::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0)); opacity: 0; transition: 0.3s; }
+        .role-option:hover { transform: translateY(-2px); opacity: 0.9; }
+        .role-option.active { opacity: 1; border-color: transparent; background: white; box-shadow: var(--shadow-float); transform: scale(1.04) translateY(-3px); z-index: 5; }
+        .role-option.active::after { content:''; position: absolute; bottom: 0; left: 30%; width: 40%; height: 3px; background: var(--primary); border-radius: 10px 10px 0 0; }
+        .role-icon { font-size: 1.4rem; margin-bottom: 5px; color: #cbd5e1; transition: 0.4s; }
+        .role-option.active .role-icon { color: var(--primary); transform: scale(1.1); }
+        .role-label { font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; transition: 0.3s; }
+        .role-option.active .role-label { color: var(--text-dark); }
+        .visually-hidden { position: absolute; width: 0; height: 0; opacity: 0; visibility: hidden; }
+        .input-group { position: relative; animation: fadeUp 0.6s ease-out 0.2s backwards; }
+        .input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 0.95rem; z-index: 2; }
+        .nice-input { width: 100%; padding: 14px 14px 14px 45px; border-radius: var(--radius-input); border: 2px solid transparent; background: rgba(255, 255, 255, 0.9); color: var(--text-dark); font-family: inherit; font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: 0.3s ease; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        .nice-input::focus { background: white; border-color: var(--primary); box-shadow: 0 6px 18px rgba(16, 185, 129, 0.15); transform: translateY(-2px); }
+        .eye-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #d1d5db; cursor: pointer; font-size: 0.95rem; z-index: 5; }
+        .btn-main { width: 100%; padding: 14px; border-radius: var(--radius-btn); background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); cursor: pointer; margin-top: 8px; transition: 0.4s; display: flex; justify-content: center; align-items: center; gap: 10px; animation: fadeUp 0.6s ease-out 0.3s backwards; }
+        .btn-main:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4); }
+        .signup-area { text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-gray); animation: fadeUp 0.6s ease-out 0.4s backwards; }
+        .signup-link { color: var(--primary-dark); font-weight: 700; margin-left: 5px; position: relative; text-decoration: none; }
+        .signup-link::after { content:''; position: absolute; width: 0; height: 2px; bottom: -1px; left: 0; background: var(--primary); transition: 0.3s; }
+        .signup-link:hover::after { width: 100%; }
+        .flash-wrap { margin-bottom: 8px; width: 100%; text-align: center; animation: fadeUp 0.5s ease; }
+        .flash-pill { background: #FEF2F2; color: #EF4444; border: 1px solid #FEE2E2; padding: 8px 16px; border-radius: 30px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.1); }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- ULTRA-MODERN TRICOLOR ARC PRELOADER -->
+    <div id="preloader">
+        <div class="loader-content">
+            <!-- 1. Top Saffron Arc (North India Symbol) -->
+            <div class="arc-saffron"></div>
+            <!-- 2. Bottom Green Arc (Agricultural Roots) -->
+            <div class="arc-green"></div>
+            <!-- 3. Blue Center (Health Core) -->
+            <div class="chakra-core"></div>
+            
+            <!-- Logo Floating in Center -->
+            <img src="static/logo.png" alt="Loading" class="loader-logo">
+        </div>
+        <!-- Rapid 22 Language Text -->
+        <div class="loader-text" id="brandText">JEEVPATH</div>
+    </div>
+
+    <div class="bg-animation-layer">
+        <i class="fa-solid fa-heart-pulse bg-icon i1"></i>
+        <i class="fa-solid fa-stethoscope bg-icon i2"></i>
+        <i class="fa-solid fa-dna bg-icon i3"></i>
+        <i class="fa-solid fa-pills bg-icon i4"></i>
+        <i class="fa-solid fa-user-doctor bg-icon i5"></i>
+        <i class="fa-solid fa-hospital bg-icon i6"></i>
+        <i class="fa-solid fa-notes-medical bg-icon i7"></i>
+        <i class="fa-solid fa-syringe bg-icon i8"></i>
+    </div>
+
+    <div class="content-layer">
+        <div class="brand-area">
+            <div class="logo-circle"><img src="static/logo.png" alt="Logo" class="logo-img"></div>
+            <h1 class="brand-title">JEEVPATH</h1>
+            <div class="brand-sub">Advanced Diagnostics System</div>
+        </div>
+
+        <form method="POST" class="login-wrapper">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="flash-wrap">
+                    <div class="flash-pill"><i class="fa-solid fa-circle-exclamation"></i> {{ messages[0] }}</div>
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <input type="text" name="role" id="selectedRole" value="patient" class="visually-hidden" aria-label="User Role">
+
+            <div class="role-switch-container">
+                <div class="role-option active" id="role-patient" onclick="setRole('patient')">
+                    <div class="role-icon"><i class="fa-solid fa-hospital-user"></i></div>
+                    <div class="role-label">Patient</div>
+                </div>
+                <div class="role-option" id="role-doctor" onclick="setRole('doctor')">
+                    <div class="role-icon"><i class="fa-solid fa-user-doctor"></i></div>
+                    <div class="role-label">Doctor Panel</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <i class="fa-regular fa-envelope input-icon"></i>
+                <input type="email" name="email" class="nice-input" placeholder="Email Address" required autocomplete="email">
+            </div>
+
+            <div class="input-group">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <button type="button" class="eye-btn" onclick="togglePass()" aria-label="Toggle Password Visibility">
+                    <i class="fa-regular fa-eye" id="eyeIcon"></i>
+                </button>
+                <input type="password" name="password" id="passInput" class="nice-input" placeholder="Password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-main">
+                Secure Login <i class="fa-solid fa-arrow-right-long"></i>
+            </button>
+
+            <div class="signup-area">
+                New to JeevPath? <a href="/signup" class="signup-link">Create Account</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        /* 22 LANGUAGE ANIMATION */
+        const brandNames = [
+            "JEEVPATH", "जीवपथ", "জীবপথ", "జీవపథ్", "ஜீவபாத்", "જીવપથ", "ಜೀವಪತ್", "ജീവപാത്ത്", "ਜੀਵਪਥ", "ଜୀବପଥ", "জীৱপথ", "जीवपथः", "जीवपथ", "JEEVPATH", "जीवपथ", "జీవపథ్", "જીવપથ", "JEEVPATH"
+        ];
+        
+        let i = 0;
+        const brandEl = document.getElementById('brandText');
+
+        window.addEventListener('load', function() {
+            const textInterval = setInterval(() => {
+                brandEl.innerText = brandNames[i];
+                i = (i + 1) % brandNames.length;
+            }, 80); 
+
+            setTimeout(function() {
+                clearInterval(textInterval);
+                brandEl.innerText = "JEEVPATH";
+                document.getElementById('preloader').classList.add('hide-loader');
+            }, 2500); 
+        });
+
+        function setRole(role) {
+            document.getElementById('selectedRole').value = role;
+            if(role === 'patient') {
+                document.getElementById('role-patient').classList.add('active');
+                document.getElementById('role-doctor').classList.remove('active');
+            } else {
+                document.getElementById('role-patient').classList.remove('active');
+                document.getElementById('role-doctor').classList.add('active');
+            }
+        }
+        function togglePass() {
+            const input = document.getElementById('passInput');
+            const icon = document.getElementById('eyeIcon');
+            if(input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                icon.style.color = 'var(--primary)';
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                icon.style.color = '#d1d5db';
+            }
+        }
+    </script>
+</body>
+</html>

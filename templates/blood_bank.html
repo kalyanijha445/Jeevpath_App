@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeevPath Blood Bank</title>
+
+    <!-- ==================== PWA CONFIGURATION ==================== -->
+    <!-- 1. Viewport Settings (Prevents zooming, feels like an app) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 2. Main Manifest File -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- 3. Android/Chrome Theme Color (JeevPath Green) -->
+    <meta name="theme-color" content="#10B981">
+
+    <!-- 4. iOS/Safari Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JeevPath">
+
+    <!-- 5. App Icons -->
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="apple-touch-icon" href="/static/logo.png">
+    <!-- ========================================================== -->
+    <!-- Fonts & Icons from Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* --- GLOBAL VARIABLES (Red Theme Adaptation) --- */
+        :root {
+            --primary: #E53E3E;       /* Red for Blood Bank */
+            --primary-dark: #C53030;
+            --accent: #FEE2E2;        /* Light Red/Pink */
+            --bg-color: #FAFAFA;
+            --text-dark: #1F2937;
+            --text-gray: #6B7280;
+            --white: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(229, 62, 62, 0.08);
+            --radius-box: 24px;
+            --radius-btn: 50px;
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 100px 0 100px; /* Space for Header & Scroll */
+            color: var(--text-dark);
+            overflow-x: hidden;
+            transition: filter 0.3s;
+        }
+
+        /* --- UI COMPONENTS (Dashboard Matching) --- */
+        .glass-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-btn);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: 0.2s;
+            background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: var(--primary); font-size: 1.1rem; text-decoration: none;
+        }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .header-title {
+            font-weight: 700; font-size: 1rem; color: var(--text-dark);
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .container-app { padding: 0 20px; max-width: 600px; margin: 0 auto; position: relative; }
+
+        /* --- SEARCH & ACTION BAR --- */
+        .action-bar-wrapper {
+            margin-bottom: 25px;
+            display: flex; gap: 10px; align-items: center;
+            animation: fade-up 0.4s ease-out;
+        }
+        
+        .search-box {
+            flex: 1; position: relative;
+            background: white; border-radius: var(--radius-btn);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex; align-items: center; padding: 5px 5px 5px 20px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .search-box:focus-within { border-color: var(--primary); }
+
+        .search-box i { color: var(--text-gray); font-size: 1rem; }
+        
+        .search-input {
+            border: none; background: transparent; height: 40px; width: 100%;
+            margin-left: 10px; font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem; font-weight: 500; color: var(--text-dark);
+        }
+
+        .search-btn-icon {
+            width: 38px; height: 38px; background: var(--bg-color); border: none; border-radius: 50%;
+            color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .action-btn-main {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; border: none; padding: 0 20px; height: 50px;
+            border-radius: var(--radius-btn); font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4); cursor: pointer; transition: 0.2s;
+            white-space: nowrap; font-size: 0.9rem;
+        }
+        .action-btn-main:active { transform: scale(0.95); }
+
+        /* --- FLASH MESSAGE --- */
+        .flash-msg {
+            background: #D1FAE5; color: #065F46; padding: 15px; border-radius: 15px;
+            text-align: center; font-size: 0.9rem; margin-bottom: 20px;
+            border: 1px solid #10B981; animation: fade-up 0.5s;
+        }
+
+        /* --- ADVANCED REGISTRATION FORM --- */
+        .registration-area {
+            background: white; border-radius: var(--radius-box);
+            padding: 25px; box-shadow: var(--shadow-soft);
+            margin-bottom: 30px; display: none; overflow: hidden;
+            border: 1px solid var(--accent);
+        }
+        .registration-area.active { display: block; animation: slideDown 0.4s ease-out; }
+
+        .form-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin: 0 0 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .app-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .span-full { grid-column: 1 / -1; }
+
+        .modern-input-group {
+            position: relative; background: var(--bg-color); border-radius: 16px;
+            padding: 0; border: 1px solid #eee; transition: 0.3s;
+        }
+        .modern-input-group:focus-within { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.1); }
+
+        .modern-label {
+            display: block; font-size: 0.7rem; color: var(--text-gray);
+            font-weight: 600; margin-left: 16px; margin-top: 8px; margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        
+        .modern-input, .modern-select {
+            width: 100%; border: none; background: transparent; padding: 4px 16px 10px;
+            font-size: 0.95rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+            color: var(--text-dark); border-radius: 0; -webkit-appearance: none; appearance: none;
+        }
+
+        /* Custom Arrow for select */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; right: 15px; top: 50%; transform: translateY(-30%);
+            color: var(--primary); font-size: 0.8rem; pointer-events: none;
+        }
+
+        .save-btn-full {
+            width: 100%; background: var(--text-dark); color: white; border: none; padding: 16px;
+            border-radius: 16px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* --- DONOR LIST --- */
+        .list-header { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); margin-bottom: 15px; display: block;}
+
+        .donor-card {
+            background: white; border-radius: 20px; padding: 20px;
+            margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05);
+            position: relative; overflow: hidden; transition: transform 0.2s;
+            animation: fade-up 0.5s ease-both;
+        }
+        
+        /* Animated border effect via gradient bottom */
+        .donor-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), #FE7F7F);
+            transition: width 0.4s ease;
+        }
+        .donor-card:hover { transform: translateY(-3px); }
+        .donor-card:hover::after { width: 100%; }
+
+        .d-left { display: flex; align-items: center; gap: 15px; flex: 1; }
+        
+        .blood-avatar {
+            width: 55px; height: 55px; border-radius: 16px;
+            background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+            color: var(--primary); display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(229, 62, 62, 0.1);
+            flex-shrink: 0;
+        }
+        .b-group { font-weight: 800; font-size: 1.1rem; line-height: 1; }
+        .b-icon { font-size: 0.6rem; margin-top: 2px; opacity: 0.7;}
+
+        .d-info h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; color: var(--text-dark); }
+        .d-location { font-size: 0.75rem; color: var(--text-gray); display: flex; align-items: center; gap: 5px; }
+        .d-phone { display: none; } /* Hidden, utilized in button */
+
+        .call-btn {
+            width: 45px; height: 45px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #ef4444);
+            color: white; display: flex; align-items: center; justify-content: center;
+            text-decoration: none; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            transition: 0.2s; flex-shrink: 0;
+        }
+        .call-btn:active { transform: scale(0.9); }
+
+        .empty-state {
+            text-align: center; padding: 40px 20px; background: white;
+            border-radius: var(--radius-box); border: 1px dashed #ccc;
+            color: var(--text-gray); font-size: 0.9rem;
+        }
+
+        /* --- FILTER PILLS --- */
+        .filter-options {
+            display: none; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; 
+            padding: 5px; animation: slideDown 0.3s ease-out;
+        }
+        .filter-options.show { display: flex; }
+
+        .filter-pill {
+            background: white; border: 1px solid var(--accent);
+            padding: 8px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+            color: var(--text-gray); cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill:hover, .filter-pill.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+        }
+
+        /* --- PROFILE MODAL (Matching Dashboard) --- */
+        .profile-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 3000; visibility: hidden; 
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.83, 0, 0.17, 1);
+        }
+        .profile-modal.open { visibility: visible; transform: translateY(0); }
+        
+        .profile-header {
+            padding: 40px 20px 30px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; text-align: center;
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            position: relative;
+        }
+        
+        .close-p-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); width: 35px; height: 35px;
+            border-radius: 50%; border: none; color: white;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+        }
+        .p-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 30px; }
+        .p-item {
+            background: var(--bg-color); padding: 15px; border-radius: 15px; text-align: center;
+        }
+
+        /* Animations */
+        @keyframes slideDown { from { height: 0; opacity: 0; transform: translateY(-10px); } to { height: auto; opacity: 1; transform: translateY(0); } }
+        @keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+    </style>
+</head>
+<body>
+
+    <!-- PROFILE MODAL -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-header">
+            <button class="close-p-btn" onclick="toggleProfile()" aria-label="Close profile">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">
+                <i class="fa-solid fa-circle-user" aria-hidden="true"></i>
+            </div>
+            <h2 style="margin: 0; font-size: 1.4rem;">{{ user.name }}</h2>
+            <p style="margin: 5px 0 0; opacity: 0.9;">{{ user.email }}</p>
+        </div>
+        <div class="p-data-grid">
+            <div class="p-item"><i class="fa-solid fa-calendar-day" style="color:var(--primary);"></i><br><small>Age</small><br><strong>{{ user.age }}</strong></div>
+            <div class="p-item"><i class="fa-solid fa-venus-mars" style="color:var(--primary);"></i><br><small>Gender</small><br><strong>{{ user.gender }}</strong></div>
+            <!-- Added Diet Preference Section -->
+            <div class="p-item"><i class="fa-solid fa-utensils" style="color:var(--primary);"></i><br><small>Diet</small><br><strong>{{ user.diet }}</strong></div>
+            <div class="p-item"><i class="fa-solid fa-id-card" style="color:var(--primary);"></i><br><small>User ID</small><br><strong>JP-8829</strong></div>
+        </div>
+        <div style="padding: 20px;">
+             <a href="/logout" style="display: block; width: 100%; text-align: center; padding: 15px; background: #fee2e2; color: #b91c1c; border-radius: 50px; text-decoration: none; font-weight: 700;">Logout</a>
+        </div>
+    </div>
+
+    <!-- GLASS HEADER -->
+    <header class="glass-header">
+        <a href="/user_dashboard" class="nav-btn" aria-label="Back to dashboard">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        </a>
+        <div class="header-title">
+            <i class="fa-solid fa-heart-pulse" style="color: var(--primary);"></i> BLOOD BANK
+        </div>
+        <button class="nav-btn" onclick="toggleProfile()" aria-label="Open profile">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <div class="container-app">
+        
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash-msg"><i class="fa-solid fa-circle-check"></i> {{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+
+        <!-- SEARCH & REGISTER CONTROLS -->
+        <div class="action-bar-wrapper">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Find donor, city..." onkeyup="filterDonors()">
+                <button type="button" class="search-btn-icon" onclick="startDictation()" aria-label="Voice Search">
+                    <i class="fa-solid fa-microphone" aria-hidden="true"></i>
+                </button>
+            </div>
+            <button class="action-btn-main" onclick="toggleRegisterForm()" title="Register as Donor">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add
+            </button>
+        </div>
+
+        <!-- REGISTRATION FORM -->
+        <div id="registerFormSection" class="registration-area">
+            <h3 class="form-title"><i class="fa-solid fa-hand-holding-medical"></i> New Donor Registration</h3>
+            
+            <form action="/register_donor" method="POST">
+                <div class="app-form-grid">
+                    <div class="modern-input-group span-full">
+                        <label class="modern-label">Donor Name</label>
+                        <input type="text" name="name" value="{{ user.name if user.name else '' }}" class="modern-input" placeholder="e.g. Rahul Kumar" required>
+                    </div>
+
+                    <div class="modern-input-group select-wrapper">
+                        <label class="modern-label">Blood Group</label>
+                        <select name="blood_group" class="modern-select" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+
+                    <div class="modern-input-group">
+                        <label class="modern-label">Phone</label>
+                        <input type="tel" name="contact" class="modern-input" placeholder="Mobile No" required>
+                    </div>
+
+                    <div class="modern-input-group span-full">
+                        <label class="modern-label">Location / City</label>
+                        <input type="text" name="address" class="modern-input" placeholder="e.g. Andheri, Mumbai" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn-full">CONFIRM REGISTRATION</button>
+            </form>
+        </div>
+
+        <!-- LIST HEADER WITH FILTER BUTTON -->
+        <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:15px;">
+            <span class="list-header">Nearby Donors</span>
+            <!-- Filter Toggle Click Event Added -->
+            <div onclick="toggleFilterOptions()" style="color:var(--primary); font-size:0.9rem; cursor:pointer;" aria-hidden="true">
+                <i class="fa-solid fa-sliders"></i> Filter
+            </div>
+        </div>
+
+        <!-- FILTER CHIPS (Hidden initially) -->
+        <div id="filterOptions" class="filter-options">
+            <button class="filter-pill" onclick="applyFilter('A+')">A+</button>
+            <button class="filter-pill" onclick="applyFilter('B+')">B+</button>
+            <button class="filter-pill" onclick="applyFilter('O+')">O+</button>
+            <button class="filter-pill" onclick="applyFilter('AB+')">AB+</button>
+            <button class="filter-pill" onclick="applyFilter('O-')">O-</button>
+            <button class="filter-pill" onclick="applyFilter('')" style="background: var(--text-dark); color: white; border: none;">Reset</button>
+        </div>
+
+        <!-- DONOR GRID -->
+        <div id="donorGrid">
+            {% for donor in donors %}
+            <div class="donor-card" data-name="{{ donor.name|lower }}" data-addr="{{ donor.address|lower }}" data-blood="{{ donor.blood_group }}">
+                <div class="d-left">
+                    <div class="blood-avatar">
+                        <span class="b-group">{{ donor.blood_group }}</span>
+                        <i class="fa-solid fa-droplet b-icon" aria-hidden="true"></i>
+                    </div>
+                    <div class="d-info">
+                        <h3>{{ donor.name }}</h3>
+                        <div class="d-location">
+                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ donor.address }}
+                        </div>
+                    </div>
+                </div>
+                <a href="tel:{{ donor.contact }}" class="call-btn" aria-label="Call {{ donor.name }}">
+                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                </a>
+            </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open" style="font-size: 2rem; opacity:0.3; margin-bottom: 10px;" aria-hidden="true"></i>
+                    <p>No donors registered currently.<br>Be the first one!</p>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <script>
+        function toggleRegisterForm() {
+            var formDiv = document.getElementById("registerFormSection");
+            formDiv.classList.toggle("active");
+        }
+
+        function toggleProfile() {
+            var modal = document.getElementById("profileModal");
+            modal.classList.toggle("open");
+        }
+
+        // Updated Filter Functionality
+        function toggleFilterOptions() {
+            var options = document.getElementById("filterOptions");
+            options.classList.toggle("show");
+        }
+
+        function applyFilter(value) {
+            document.getElementById('searchInput').value = value;
+            filterDonors();
+            
+            // Highlight selected pill
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            if(value) {
+                event.target.classList.add('active');
+            }
+        }
+
+        function filterDonors() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.querySelectorAll('.donor-card');
+            
+            cards.forEach(card => {
+                let name = card.getAttribute('data-name');
+                let addr = card.getAttribute('data-addr');
+                let group = card.getAttribute('data-blood').toLowerCase();
+                
+                // Flexible logic: input "A+" searches blood group, name or address
+                if (name.includes(input) || addr.includes(input) || group.includes(input)) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function startDictation() {
+            if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                var recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = "en-IN";
+                recognition.start();
+
+                recognition.onresult = function(e) {
+                    document.getElementById('searchInput').value = e.results[0][0].transcript;
+                    recognition.stop();
+                    filterDonors();
+                };
+
+                recognition.onerror = function(e) {
+                    recognition.stop();
+                    alert("Speech recognition failed. Please type.");
+                }
+            } else {
+                alert("Voice search is not supported in this browser.");
+            }
+        }
+    </script>
+</body>
+</html>
