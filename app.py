@@ -698,7 +698,10 @@ def videos():
     all_videos = HealthVideo.query.order_by(HealthVideo.timestamp.desc()).all()
     return render_template('videos.html', videos=all_videos, user=current_user)
 
+# --- STARTUP FIX FOR RENDER ---
+# This ensures tables are created even when started via Gunicorn
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
